@@ -2,14 +2,13 @@ import streamlit as st
 import pandas as pd
 import os
 
-# --- 1. CONFIGURATION ---
-st.set_page_config(page_title="Refuge de Douai", layout="centered")
+# --- 1. CONFIGURATION DE LA PAGE ---
+st.set_page_config(page_title="Refuge Médéric (Association Animaux du Grand Dax)", layout="centered", page_icon="🐾")
 
 # --- 2. LIEN GOOGLE SHEET ---
-# REMPLACE CE LIEN par le tien (celui obtenu via le bouton Partager)
-URL_SHEET = "https://docs.google.com/spreadsheets/d/1XZXKwCfJ_922HAkAANzpXyyZL97uJzcu84viFWdtgpA/edit?usp=sharing"
+# Remplace par ton lien de partage (bouton Partager -> Tous les utilisateurs disposant du lien)
+URL_SHEET = "https://docs.google.com/spreadsheets/d/1XZXKwCfJ_922HAkAANzpXyyZL97uJzcu84viFWdtgpA/edit?gid=1314662901#gid=1314662901"
 
-# Transformation automatique du lien pour lecture directe
 def get_csv_url(url):
     if "docs.google.com" in url:
         return url.replace('/edit?usp=sharing', '/export?format=csv').replace('/edit#gid=', '/export?format=csv&gid=')
@@ -17,7 +16,7 @@ def get_csv_url(url):
 
 URL_CSV = get_csv_url(URL_SHEET)
 
-# --- 3. STYLE CSS (Grandes photos & Design) ---
+# --- 3. STYLE CSS ---
 st.markdown("""
     <style>
     .stAlert { padding: 5px; border-radius: 10px; }
@@ -26,8 +25,13 @@ st.markdown("""
         max-height: 350px; 
         object-fit: cover;
     }
-    [data-testid="stVerticalBlockBorderWrapper"] {
-        margin-bottom: 15px;
+    .footer {
+        text-align: center;
+        color: #888888;
+        font-size: 0.9em;
+        margin-top: 50px;
+        padding: 20px;
+        border-top: 1px solid #eeeeee;
     }
     </style>
     """, unsafe_allow_html=True)
@@ -36,16 +40,11 @@ st.title("🐾 Nos protégés")
 
 try:
     # --- 4. CHARGEMENT DES DONNÉES ---
-    # On ajoute st.cache_data pour que l'app soit rapide
-    @st.cache_data(ttl=600) # Recharge les données toutes les 10 min
-    def load_data(url):
-        return pd.read_csv(url)
-
-    df = load_data(URL_CSV)
+    # On désactive le cache pour voir les modifs du Sheet instantanément pendant les tests
+    df = pd.read_csv(URL_CSV)
 
     # --- 5. FILTRE AUTOMATIQUE ---
     if not df.empty:
-        # On récupère les espèces uniques (Chien, Chat...)
         liste_especes = ["Tous"] + sorted(df['Espèce'].dropna().unique().tolist())
         espece_choisie = st.selectbox("Quel animal recherchez-vous ?", liste_especes)
     else:
@@ -63,7 +62,7 @@ try:
             
             with col1:
                 photo = str(row['Photo']).strip()
-                # Vérifie si c'est un lien Web ou un fichier local
+                # Test si c'est un lien Web ou un fichier local
                 if photo.startswith('http'):
                     st.image(photo, use_container_width=True)
                 elif os.path.exists(photo):
@@ -74,7 +73,7 @@ try:
             with col2:
                 st.header(row['Nom'])
                 
-                # Statuts avec couleurs
+                # Couleurs des statuts
                 statut = str(row['Statut'])
                 if "Adopté" in statut:
                     st.success(f"✅ {statut}")
@@ -92,6 +91,18 @@ try:
                 with tab2:
                     st.write(row['Description'])
 
+    # --- 7. PIED DE PAGE (DROITS RÉSERVÉS) ---
+    st.markdown(
+        """
+        <div class="footer">
+            <p>© 2026 - Application officielle de l’association Animaux du Grand Dax</p>
+            <p>Tous droits réservés - Créé par <b>Firnaeth.</b></p>
+            <p><i>Reproduction et utilisation interdites sans autorisation</i></p>
+        </div>
+        """, 
+        unsafe_allow_html=True
+    )
+
 except Exception as e:
-    st.error(f"Erreur de connexion au Google Sheet.")
-    st.info("Vérifie que ton lien est public ('Tous les utilisateurs disposant du lien').")
+    st.error("Connexion impossible au fichier de données.")
+    st.info("Si tu es en local, vérifie 'animaux.csv'. Si tu es sur Sheet, vérifie le lien de partage.")
