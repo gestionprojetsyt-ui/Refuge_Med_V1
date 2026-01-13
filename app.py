@@ -2,7 +2,7 @@ import streamlit as st
 import pandas as pd
 
 # Configuration pour mobile
-st.set_page_config(page_title="Refuge de Douai", layout="centered")
+st.set_page_config(page_title="Refuge_Med_V1", layout="centered")
 
 # Lien vers ton Google Sheets (le lien .csv copié à l'étape 2)
 URL_DONNEES = "https://docs.google.com/spreadsheets/d/1XZXKwCfJ_922HAkAANzpXyyZL97uJzcu84viFWdtgpA/edit?usp=sharing"
