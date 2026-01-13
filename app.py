@@ -5,9 +5,13 @@ import os
 # --- 1. CONFIGURATION DE LA PAGE ---
 st.set_page_config(page_title="Refuge Médéric (Association Animaux du Grand Dax)", layout="centered", page_icon="🐾")
 
-# --- 2. LIEN GOOGLE SHEET ---
-# Remplace par ton lien de partage (bouton Partager -> Tous les utilisateurs disposant du lien)
-URL_SHEET = "https://docs.google.com/spreadsheets/d/1XZXKwCfJ_922HAkAANzpXyyZL97uJzcu84viFWdtgpA/edit?usp=sharing"
+# --- 2. RÉCUPÉRATION DU LIEN SÉCURISÉ ---
+# Le lien est caché dans les 'Secrets' de Streamlit pour plus de sécurité
+try:
+    URL_SHEET = st.secrets["gsheets"]["public_url"]
+except:
+    st.error("Lien de la base de données non configuré dans les Secrets.")
+    st.stop()
 
 def get_csv_url(url):
     if "docs.google.com" in url:
