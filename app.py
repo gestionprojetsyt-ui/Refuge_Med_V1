@@ -4,7 +4,7 @@ import re
 
 # --- 1. CONFIGURATION DE LA PAGE ---
 st.set_page_config(
-    page_title="Refuge Médérique - Grand Dax", 
+    page_title="Refuge Médérique - Association Animaux du Grand Dax", 
     layout="centered", 
     page_icon="🐾"
 )
