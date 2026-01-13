@@ -110,9 +110,10 @@ try:
 
     # --- PIED DE PAGE ---
     st.markdown(f'''
-        <div class="footer">
-            © 2026 - Refuge Médérique - Association Animaux du Grand Dax<br>
-            <i>Application officielle de présentation des animaux à l'adoption</i>
+       <div class="footer">
+            © 2026 - Application officielle du Refuge Médérique<br>
+            <b>Association Animaux du Grand Dax</b><br>
+            Développé par Firnaeth. avec passion pour nos amis à quatre pattes
         </div>
     ''', unsafe_allow_html=True)
 
