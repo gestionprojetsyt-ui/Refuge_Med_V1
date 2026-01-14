@@ -4,7 +4,7 @@ import re
 
 # --- 1. CONFIGURATION DE LA PAGE ---
 st.set_page_config(
-    page_title="Refuge Médérique - Grand Dax", 
+    page_title="Refuge Médéric - Grand Dax", 
     layout="centered", 
     page_icon="🐾"
 )
@@ -16,10 +16,10 @@ def load_all_data(url):
     csv_url = url.replace('/edit?usp=sharing', '/export?format=csv').replace('/edit#gid=', '/export?format=csv&gid=')
     df = pd.read_csv(csv_url, engine='c', low_memory=False)
     
-    # Création automatique des tranches d'âge
+    # Classification automatique par âge
     def categoriser_age(age):
         try:
-            age = float(age)
+            age = float(str(age).replace(',', '.'))
             if age < 1: return "Moins d'un an (Junior)"
             elif 1 <= age <= 5: return "1 à 5 ans (Adulte)"
             elif 5 < age < 10: return "5 à 10 ans (Adulte)"
@@ -44,7 +44,8 @@ st.markdown("""
     <style>
     [data-testid="stImage"] img { border-radius: 15px; object-fit: cover; height: 260px; }
     .footer { text-align: center; color: #888; font-size: 0.85em; margin-top: 50px; border-top: 1px solid #eee; padding-top: 20px; }
-    div[data-testid="stColumn"] > div > div > div > button { margin-top: 28px; border-radius: 10px; }
+    /* Style pour le bouton actualiser en pleine largeur */
+    .stButton>button { width: 100%; border-radius: 10px; background-color: #f0f2f6; border: 1px solid #dcdfe3; }
     </style>
     """, unsafe_allow_html=True)
 
@@ -57,33 +58,33 @@ try:
     st.markdown("#### Association Animaux du Grand Dax")
 
     if not df.empty:
-        # --- BLOC DE FILTRES ---
-        col1, col2, col3 = st.columns([2, 2, 1])
+        # --- ZONE DE FILTRES ---
+        col1, col2 = st.columns(2)
         
         with col1:
             liste_especes = ["Tous"] + sorted(df['Espèce'].dropna().unique().tolist())
-            choix_espece = st.selectbox("Espèce", liste_especes)
+            choix_espece = st.selectbox("🐶 Espèce", liste_especes)
         
         with col2:
-            liste_ages = ["Tous"] + ["Moins d'un an (Junior)", "1 à 5 ans (Adulte)", "5 à 10 ans (Adulte)", "10 ans et plus (Senior)"]
-            choix_age = st.selectbox("Tranche d'âge", liste_ages)
+            liste_ages = ["Tous", "Moins d'un an (Junior)", "1 à 5 ans (Adulte)", "5 à 10 ans (Adulte)", "10 ans et plus (Senior)"]
+            choix_age = st.selectbox("🎂 Tranche d'âge", liste_ages)
             
-        with col3:
-            if st.button("🔄"):
-                st.cache_data.clear()
-                st.rerun()
+        # Bouton actualiser placé juste en dessous des deux colonnes
+        if st.button("🔄 Actualiser les données du refuge"):
+            st.cache_data.clear()
+            st.rerun()
         
-        # --- LOGIQUE DU DOUBLE FILTRAGE ---
+        # --- LOGIQUE DE FILTRAGE ---
         df_filtre = df.copy()
         if choix_espece != "Tous":
             df_filtre = df_filtre[df_filtre['Espèce'] == choix_espece]
         if choix_age != "Tous":
             df_filtre = df_filtre[df_filtre['Tranche_Age'] == choix_age]
             
-        st.write(f"Résultat : **{len(df_filtre)}** protégé(s) correspond(ent) à vos critères.")
+        st.write(f"Résultat : **{len(df_filtre)}** protégé(s) trouvé(s).")
         st.markdown("---")
 
-        # --- AFFICHAGE ---
+        # --- AFFICHAGE DES FICHES ---
         for _, row in df_filtre.iterrows():
             with st.container(border=True):
                 c1, c2 = st.columns([1.5, 2])
@@ -107,14 +108,14 @@ try:
                     with st.expander("Son histoire"):
                         st.write(row['Histoire'])
 
-# --- PIED DE PAGE ---
-    st.markdown(f'''
+    # --- PIED DE PAGE ---
+   st.markdown(f'''
        <div class="footer">
-            © 2026 - Application officielle du Refuge Médérique<br>
+            © 2026 - Application officielle du Refuge Médéric<br>
             <b>Association Animaux du Grand Dax</b><br>
             Développé par Firnaeth. avec passion pour nos amis à quatre pattes
         </div>
     ''', unsafe_allow_html=True)
 
 except Exception as e:
-    st.error("Erreur de connexion.")
+    st.error(f"Erreur de connexion : {e}")
