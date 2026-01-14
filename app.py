@@ -109,7 +109,7 @@ try:
                     else: st.warning(f"🏠 {statut}")
                     st.write(f"**{row['Espèce']}** | {row['Sexe']} | **{row['Âge']} ans**")
                     st.markdown(f"📅 **Arrivé le :** {row['Date_Entree']}")
-                    with st.expander("📖 Le caractère et l'histoire de l'animal"):
+                    with st.expander("📖 Sa personnalité et son vécu"):
                         st.write(row['Description'])
                         st.write("---")
                         st.write(row['Histoire'])
