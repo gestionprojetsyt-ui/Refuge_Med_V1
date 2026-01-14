@@ -45,7 +45,6 @@ st.markdown("""
     
     .contact-link { text-decoration: none; color: white !important; background-color: #28a745; padding: 10px; border-radius: 8px; display: block; text-align: center; font-weight: bold; margin-top: 10px; }
     
-    /* Style du PIED DE PAGE */
     .footer-container {
         background-color: #f8f9fa;
         padding: 30px;
@@ -107,15 +106,20 @@ try:
                     if "Adopté" in statut: st.success(f"✅ {statut}")
                     elif "Urgence" in statut: st.error(f"🚨 {statut}")
                     else: st.warning(f"🏠 {statut}")
+                    
                     st.write(f"**{row['Espèce']}** | {row['Sexe']} | **{row['Âge']} ans**")
                     st.markdown(f"📅 **Arrivé le :** {row['Date_Entree']}")
+                    
                     with st.expander("📖 Sa personnalité et son vécu"):
+                        st.markdown("### 🐾 Caractère")
                         st.write(row['Description'])
                         st.write("---")
+                        st.markdown("### 📜 Son Histoire")
                         st.write(row['Histoire'])
+                        
                     st.markdown(f"""<a href="mailto:animauxdugranddax@gmail.com?subject=Adoption de {row['Nom']}" class="contact-link">📩 Contacter pour {row['Nom']}</a>""", unsafe_allow_html=True)
 
-    # --- 5. PIED DE PAGE AVEC COPYRIGHT ---
+    # --- 5. PIED DE PAGE ---
     st.markdown("""
         <div class="footer-container">
             <div class="footer-info">
@@ -124,7 +128,7 @@ try:
                 📞 05 58 73 68 82 | ⏰ 14h00 - 18h00 (Mercredi au Dimanche)
             </div>
             <div class="copyright">
-                 © 2026 - Application officielle du Refuge Médéric<br>
+                 © 2026 - Application officielle du Refuge Médérique<br>
             <b>Association Animaux du Grand Dax</b><br>
             Développé par Firnaeth. avec passion pour nos amis à quatre pattes
             </div>
