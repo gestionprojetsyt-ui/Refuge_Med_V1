@@ -20,7 +20,7 @@ def load_all_data(url):
         try:
             age = float(str(age).replace(',', '.'))
             if age < 1: return "Moins d'un an (Junior)"
-            elif 1 <= age <= 5: return "1 à 5 ans (Adulte)"
+            elif 1 <= age <= 5: return "1 à 5 ans (Jeune Adulte)"
             elif 5 < age < 10: return "5 à 10 ans (Adulte)"
             else: return "10 ans et plus (Senior)"
         except: return "Non précisé"
