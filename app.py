@@ -16,14 +16,15 @@ def load_all_data(url):
     csv_url = url.replace('/edit?usp=sharing', '/export?format=csv').replace('/edit#gid=', '/export?format=csv&gid=')
     df = pd.read_csv(csv_url, engine='c', low_memory=False)
     
-    def categoriser_age(age):
-        try:
-            age = float(str(age).replace(',', '.'))
-            if age < 1: return "Moins d'un an (Junior)"
-            elif 1 <= age <= 5: return "1 à 5 ans (Jeune Adulte)"
-            elif 5 < age < 10: return "5 à 10 ans (Adulte)"
-            else: return "10 ans et plus (Senior)"
-        except: return "Non précisé"
+# Dans la fonction load_all_data, la partie modifiée :
+def categoriser_age(age):
+    try:
+        age = float(str(age).replace(',', '.'))
+        if age < 1: return "Moins d'un an (Junior)"
+        elif 1 <= age <= 5: return "1 à 5 ans (Jeune Adulte)" # <--- Changement ici
+        elif 5 < age < 10: return "5 à 10 ans (Adulte)"
+        else: return "10 ans et plus (Senior)"
+    except: return "Non précisé"
             
     df['Tranche_Age'] = df['Âge'].apply(categoriser_age)
     return df
