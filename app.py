@@ -11,8 +11,9 @@ st.set_page_config(
 
 # --- 2. FONCTIONS TECHNIQUES ---
 
-@st.cache_data(ttl=3600)
+@st.cache_data(ttl=600) # Rafraîchissement toutes les 10 minutes
 def load_all_data(url):
+    # Transformation automatique du lien pour lecture CSV
     csv_url = url.replace('/edit?usp=sharing', '/export?format=csv').replace('/edit#gid=', '/export?format=csv&gid=')
     df = pd.read_csv(csv_url, engine='c', low_memory=False)
     
@@ -43,7 +44,6 @@ st.markdown("""
     [data-testid="stImage"] img { border-radius: 15px; object-fit: cover; height: 280px; }
     .stButton>button { width: 100%; border-radius: 10px; background-color: #f0f2f6; color: #31333F; border: 1px solid #dcdfe3; }
     
-    /* Style unique pour les deux boutons de contact */
     .contact-button { 
         text-decoration: none !important; 
         color: white !important; 
@@ -55,9 +55,7 @@ st.markdown("""
         font-weight: bold; 
         margin-top: 10px;
     }
-    .contact-button:hover {
-        background-color: #1b5e20;
-    }
+    .contact-button:hover { background-color: #1b5e20; }
     
     .footer-container {
         background-color: #f8f9fa;
@@ -73,8 +71,11 @@ st.markdown("""
     """, unsafe_allow_html=True)
 
 # --- 4. CHARGEMENT ET INTERFACE ---
+
+# METS TON LIEN GOOGLE SHEETS CI-DESSOUS
+URL_SHEET = "https://docs.google.com/spreadsheets/d/1XZXKwCfJ_922HAkAANzpXyyZL97uJzcu84viFWdtgpA/edit?usp=sharing"
+
 try:
-    URL_SHEET = st.secrets["gsheets"]["public_url"]
     df = load_all_data(URL_SHEET)
 
     st.title("🐾 Refuge Médéric")
@@ -94,7 +95,7 @@ try:
             st.cache_data.clear()
             st.rerun()
 
-        st.info("🛡️ **Engagement Santé :** Tous nos protégés sont **vaccinés**, **identifiés** (puce électronique) et **stérilisés** avant leur départ du refuge.")
+        st.info("🛡️ **Engagement Santé :** Tous nos protégés sont **vaccinés**, **identifiés** et **stérilisés** avant leur départ.")
         
         df_filtre = df.copy()
         if choix_espece != "Tous": df_filtre = df_filtre[df_filtre['Espèce'] == choix_espece]
@@ -124,7 +125,7 @@ try:
                     with tab_histoire: st.write(row['Histoire'])
                     with tab_caractere: st.write(row['Description'])
                     
-                    # --- BOUTONS DE CONTACT HARMONISÉS ---
+                    # Boutons de contact (Même vert)
                     st.markdown(f"""<a href="tel:0558736882" class="contact-button">📞 Appeler le refuge</a>""", unsafe_allow_html=True)
                     st.markdown(f"""<a href="mailto:animauxdugranddax@gmail.com?subject=Adoption de {row['Nom']}" class="contact-button">📩 Envoyer un mail pour {row['Nom']}</a>""", unsafe_allow_html=True)
 
@@ -139,9 +140,11 @@ try:
             <div class="copyright">
                  © 2026 - Application officielle du Refuge Médéric<br>
                 <b>Association Animaux du Grand Dax</b><br>
-                Développé par Firnaeth. avec passion pour nos amis à quatre pattes
+                Développé par Firnaeth. avec passion
             </div>
         </div>
     """, unsafe_allow_html=True)
+
 except Exception as e:
-    st.error(f"Erreur lors du chargement des données : {e}")
+    st.error("⚠️ Erreur de connexion au classeur. Vérifiez que le lien Google Sheets est correct et publié sur le web.")
+    st.info(f"Détail technique : {e}")
