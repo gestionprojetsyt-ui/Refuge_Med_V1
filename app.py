@@ -102,7 +102,7 @@ if not df.empty:
         st.cache_data.clear()
         st.rerun()
 
-    st.info("🛡️ **Engagement Santé :** Tous nos protégés sont **vaccinés**, **identifiés** et **stérilisés**.")
+    st.info("🛡️ **Engagement Santé :** Tous nos protégés sont **vaccinés**, **identifiés** (puce électronique) et **stérilisés** avant leur départ du refuge pour une adoption responsable.")
     
     # Application des filtres
     df_filtre = df.copy()
