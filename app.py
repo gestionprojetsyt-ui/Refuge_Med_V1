@@ -102,7 +102,7 @@ try:
             st.rerun()
 
         # REMISE DE L'ENGAGEMENT SANTÉ
-        st.info("🛡️ **Engagement Santé :** Tous nos protégés sont **vaccinés**, **identifiés** et **stérilisés**.")
+        st.info("🛡️ **Engagement Santé :** Tous nos protégés sont **vaccinés** et **identifiés** (puce électronique) avant leur départ du refuge pour une adoption responsable.")
         
         st.write(f"**{len(df_dispo)}** protégé(s) à l'adoption")
         st.markdown("---")
