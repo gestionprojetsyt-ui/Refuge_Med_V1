@@ -43,24 +43,26 @@ def format_image_url(url):
 # --- 3. STYLE VISUEL (CSS) ---
 st.markdown("""
     <style>
-    /* 1. CADRE ROUGE TRÈS FIN AUTOUR DES FICHES */
-    div[data-testid="stVerticalBlockBordered"] {
-        border: 1px solid #FF0000 !important;
-        border-radius: 12px !important;
-        padding: 1.5rem !important;
-        background-color: #FFFFFF !important;
-        margin-bottom: 1rem !important;
+    /* CADRE ROUGE FIN (2px) AUTOUR DE LA FICHE ENTIÈRE */
+    .animal-card {
+        border: 2px solid #FF0000;
+        border-radius: 15px;
+        padding: 20px;
+        margin-bottom: 30px;
+        background-color: white;
+        box-shadow: 2px 2px 8px rgba(0,0,0,0.05);
     }
-
-    /* 2. BORDURE PHOTO BLANCHE FINE */
-    [data-testid="stImage"] img { 
-        border: 3px solid white !important; 
-        border-radius: 10px !important; 
-        box-shadow: 0px 2px 6px rgba(0,0,0,0.1) !important;
+    
+    /* BORDURE BLANCHE PHOTO (Effet Polaroid fin) */
+    .stImage img { 
+        border: 4px solid white !important; 
+        border-radius: 8px !important; 
+        box-shadow: 1px 1px 5px rgba(0,0,0,0.2) !important;
         object-fit: cover;
+        height: 250px;
     }
 
-    /* 3. BOUTONS */
+    /* Boutons */
     .contact-button { 
         text-decoration: none !important; color: white !important; background-color: #2e7d32; 
         padding: 10px; border-radius: 8px; display: block; text-align: center; font-weight: bold; margin-top: 10px;
@@ -70,12 +72,12 @@ st.markdown("""
         padding: 10px; border-radius: 8px; display: block; text-align: center; font-weight: bold; margin-top: 10px;
     }
 
-    /* 4. PIED DE PAGE ENCADRÉ ROUGE FIN */
+    /* Pied de page avec cadre rouge fin */
     .footer-container {
-        border: 1px solid #FF0000;
+        border: 2px solid #FF0000;
         background-color: #f8f9fa;
         padding: 20px;
-        border-radius: 12px;
+        border-radius: 15px;
         margin-top: 40px;
         text-align: center;
     }
@@ -89,17 +91,17 @@ try:
     df = load_all_data(URL_SHEET)
 
     if not df.empty:
+        # On ne garde que ceux qui ne sont pas adoptés
         df_dispo = df[df['Statut'] != "Adopté"].copy()
 
         st.title("🐾 Refuge Médéric")
         st.markdown("#### Association Animaux du Grand Dax")
 
-        # Filtres
-        c_f1, c_f2 = st.columns(2)
-        with c_f1:
+        col_f1, col_f2 = st.columns(2)
+        with col_f1:
             liste_especes = ["Tous"] + sorted(df_dispo['Espèce'].dropna().unique().tolist())
             choix_espece = st.selectbox("🐶 Espèce", liste_especes)
-        with c_f2:
+        with col_f2:
             liste_ages = ["Tous", "Moins d'un an (Junior)", "1 à 5 ans (Jeune Adulte)", "5 à 10 ans (Adulte)", "10 ans et plus (Senior)"]
             choix_age = st.selectbox("🎂 Tranche d'âge", liste_ages)
             
@@ -112,35 +114,38 @@ try:
 
         # --- BOUCLE DES FICHES ---
         for _, row in df_dispo.iterrows():
+            # FILTRAGE FINAL
             if (choix_espece == "Tous" or row['Espèce'] == choix_espece) and \
                (choix_age == "Tous" or row['Tranche_Age'] == choix_age):
                 
-                # Utilisation du container natif que nous avons stylisé en rouge en haut
-                with st.container(border=True):
-                    col_img, col_txt = st.columns([1, 1.2])
-                    
-                    with col_img:
-                        url_photo = format_image_url(row['Photo'])
-                        st.image(url_photo if url_photo.startswith('http') else "https://via.placeholder.com/300", use_container_width=True)
-                    
-                    with col_txt:
-                        st.subheader(row['Nom'])
-                        statut = str(row['Statut']).strip()
-                        if "Urgence" in statut: st.error(f"🚨 {statut}")
-                        elif "Réservé" in statut: st.warning(f"🟠 {statut}")
-                        else: st.info(f"🏠 {statut}")
+                # ON OUVRE LE CADRE ROUGE ICI (Englobe tout)
+                st.markdown('<div class="animal-card">', unsafe_allow_html=True)
+                
+                c1, c2 = st.columns([1, 1.2])
+                with c1:
+                    url_photo = format_image_url(row['Photo'])
+                    st.image(url_photo if url_photo.startswith('http') else "https://via.placeholder.com/300", use_container_width=True)
+                with c2:
+                    st.subheader(row['Nom'])
+                    statut = str(row['Statut']).strip()
+                    if "Urgence" in statut: st.error(f"🚨 {statut}")
+                    elif "Réservé" in statut: st.warning(f"🟠 {statut}")
+                    else: st.info(f"🏠 {statut}")
 
-                        st.write(f"**{row['Espèce']}** | {row['Sexe']} | **{row['Âge']} ans**")
-                        
-                        t1, t2 = st.tabs(["📖 Histoire", "📋 Caractère"])
-                        with t1: st.write(row['Histoire'])
-                        with t2: st.write(row['Description'])
-                        
-                        if "Réservé" in statut:
-                            st.markdown(f"""<div class="reserve-button">🧡 Animal déjà réservé</div>""", unsafe_allow_html=True)
-                        else:
-                            st.markdown(f"""<a href="tel:0558736882" class="contact-button">📞 Appeler</a>""", unsafe_allow_html=True)
-                            st.markdown(f"""<a href="mailto:animauxdugranddax@gmail.com?subject=Adoption de {row['Nom']}" class="contact-button">📩 Mail</a>""", unsafe_allow_html=True)
+                    st.write(f"**{row['Espèce']}** | {row['Sexe']} | **{row['Âge']} ans**")
+                    
+                    tab1, tab2 = st.tabs(["📖 Histoire", "📋 Caractère"])
+                    with tab1: st.write(row['Histoire'])
+                    with tab2: st.write(row['Description'])
+                    
+                    if "Réservé" in statut:
+                        st.markdown(f"""<div class="reserve-button">🧡 Animal déjà réservé</div>""", unsafe_allow_html=True)
+                    else:
+                        st.markdown(f"""<a href="tel:0558736882" class="contact-button">📞 Appeler</a>""", unsafe_allow_html=True)
+                        st.markdown(f"""<a href="mailto:animauxdugranddax@gmail.com?subject=Adoption de {row['Nom']}" class="contact-button">📩 Mail</a>""", unsafe_allow_html=True)
+                
+                # ON FERME LE CADRE ROUGE ICI
+                st.markdown('</div>', unsafe_allow_html=True)
 
     # --- 5. PIED DE PAGE ---
     st.markdown("""
@@ -159,4 +164,4 @@ try:
     """, unsafe_allow_html=True)
 
 except Exception as e:
-    st.warning("En attente de configuration du lien secret.")
+    st.warning("Veuillez configurer le lien secret 'public_url' dans Streamlit Cloud.")
