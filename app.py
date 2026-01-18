@@ -43,49 +43,40 @@ def format_image_url(url):
 # --- 3. STYLE VISUEL (CSS) ---
 st.markdown("""
     <style>
-    /* Supprime les bordures grises d'origine de Streamlit */
+    /* 1. CADRE ROUGE TRÈS FIN AUTOUR DES FICHES */
     div[data-testid="stVerticalBlockBordered"] {
-        border: none !important;
-        padding: 0 !important;
+        border: 1px solid #FF0000 !important;
+        border-radius: 12px !important;
+        padding: 1.5rem !important;
+        background-color: #FFFFFF !important;
+        margin-bottom: 1rem !important;
     }
 
-    /* LE CADRE ROUGE FIN QUI ENGLOBE TOUTE LA FICHE */
-    .fiche-complete {
-        border: 2px solid #FF0000 !important;
-        border-radius: 15px;
-        padding: 20px;
-        margin-bottom: 25px;
-        background-color: white;
-        box-shadow: 2px 2px 10px rgba(0,0,0,0.05);
-    }
-    
-    /* EFFET POLAROID SUR LA PHOTO */
-    .img-polaroid img { 
-        border: 5px solid white !important; 
-        border-radius: 8px !important; 
-        box-shadow: 1px 1px 6px rgba(0,0,0,0.2) !important;
+    /* 2. BORDURE PHOTO BLANCHE FINE */
+    [data-testid="stImage"] img { 
+        border: 3px solid white !important; 
+        border-radius: 10px !important; 
+        box-shadow: 0px 2px 6px rgba(0,0,0,0.1) !important;
         object-fit: cover;
     }
 
-    /* BOUTONS CONTACT VERTS */
-    .btn-contact { 
+    /* 3. BOUTONS */
+    .contact-button { 
         text-decoration: none !important; color: white !important; background-color: #2e7d32; 
-        padding: 12px; border-radius: 8px; display: block; text-align: center; font-weight: bold; margin-top: 10px;
+        padding: 10px; border-radius: 8px; display: block; text-align: center; font-weight: bold; margin-top: 10px;
     }
-    
-    /* BOUTON RÉSERVÉ ORANGE */
-    .btn-reserve { 
+    .reserve-button { 
         text-decoration: none !important; color: white !important; background-color: #ff8f00; 
-        padding: 12px; border-radius: 8px; display: block; text-align: center; font-weight: bold; margin-top: 10px;
+        padding: 10px; border-radius: 8px; display: block; text-align: center; font-weight: bold; margin-top: 10px;
     }
 
-    /* PIED DE PAGE AVEC CADRE ROUGE */
+    /* 4. PIED DE PAGE ENCADRÉ ROUGE FIN */
     .footer-container {
-        border: 2px solid #FF0000;
+        border: 1px solid #FF0000;
         background-color: #f8f9fa;
-        padding: 25px;
-        border-radius: 15px;
-        margin-top: 50px;
+        padding: 20px;
+        border-radius: 12px;
+        margin-top: 40px;
         text-align: center;
     }
     </style>
@@ -98,18 +89,17 @@ try:
     df = load_all_data(URL_SHEET)
 
     if not df.empty:
-        # On cache les adoptés
         df_dispo = df[df['Statut'] != "Adopté"].copy()
 
         st.title("🐾 Refuge Médéric")
         st.markdown("#### Association Animaux du Grand Dax")
 
         # Filtres
-        c1, c2 = st.columns(2)
-        with c1:
+        c_f1, c_f2 = st.columns(2)
+        with c_f1:
             liste_especes = ["Tous"] + sorted(df_dispo['Espèce'].dropna().unique().tolist())
             choix_espece = st.selectbox("🐶 Espèce", liste_especes)
-        with c2:
+        with c_f2:
             liste_ages = ["Tous", "Moins d'un an (Junior)", "1 à 5 ans (Jeune Adulte)", "5 à 10 ans (Adulte)", "10 ans et plus (Senior)"]
             choix_age = st.selectbox("🎂 Tranche d'âge", liste_ages)
             
@@ -122,56 +112,46 @@ try:
 
         # --- BOUCLE DES FICHES ---
         for _, row in df_dispo.iterrows():
-            # Application des filtres
             if (choix_espece == "Tous" or row['Espèce'] == choix_espece) and \
                (choix_age == "Tous" or row['Tranche_Age'] == choix_age):
                 
-                # DEBUT DU CADRE ROUGE UNIQUE
-                st.markdown('<div class="fiche-complete">', unsafe_allow_html=True)
-                
-                col_img, col_txt = st.columns([1, 1.2])
-                
-                with col_img:
-                    url_photo = format_image_url(row['Photo'])
-                    st.markdown('<div class="img-polaroid">', unsafe_allow_html=True)
-                    st.image(url_photo if url_photo.startswith('http') else "https://via.placeholder.com/300", use_container_width=True)
-                    st.markdown('</div>', unsafe_allow_html=True)
-                
-                with col_txt:
-                    st.subheader(row['Nom'])
-                    statut = str(row['Statut']).strip()
+                # Utilisation du container natif que nous avons stylisé en rouge en haut
+                with st.container(border=True):
+                    col_img, col_txt = st.columns([1, 1.2])
                     
-                    if "Urgence" in statut: st.error(f"🚨 {statut}")
-                    elif "Réservé" in statut: st.warning(f"🟠 {statut}")
-                    else: st.info(f"🏠 {statut}")
+                    with col_img:
+                        url_photo = format_image_url(row['Photo'])
+                        st.image(url_photo if url_photo.startswith('http') else "https://via.placeholder.com/300", use_container_width=True)
+                    
+                    with col_txt:
+                        st.subheader(row['Nom'])
+                        statut = str(row['Statut']).strip()
+                        if "Urgence" in statut: st.error(f"🚨 {statut}")
+                        elif "Réservé" in statut: st.warning(f"🟠 {statut}")
+                        else: st.info(f"🏠 {statut}")
 
-                    st.write(f"**{row['Espèce']}** | {row['Sexe']} | **{row['Âge']} ans**")
-                    
-                    # Onglets
-                    t_hist, t_carac = st.tabs(["📖 Histoire", "📋 Caractère"])
-                    with t_hist: st.write(row['Histoire'])
-                    with t_carac: st.write(row['Description'])
-                    
-                    # Boutons
-                    if "Réservé" in statut:
-                        st.markdown(f"""<div class="btn-reserve">🧡 Animal déjà réservé</div>""", unsafe_allow_html=True)
-                    else:
-                        st.markdown(f"""<a href="tel:0558736882" class="btn-contact">📞 Appeler le refuge</a>""", unsafe_allow_html=True)
-                        st.markdown(f"""<a href="mailto:animauxdugranddax@gmail.com?subject=Adoption de {row['Nom']}" class="btn-contact">📩 Envoyer un Mail</a>""", unsafe_allow_html=True)
-                
-                # FIN DU CADRE ROUGE UNIQUE
-                st.markdown('</div>', unsafe_allow_html=True)
+                        st.write(f"**{row['Espèce']}** | {row['Sexe']} | **{row['Âge']} ans**")
+                        
+                        t1, t2 = st.tabs(["📖 Histoire", "📋 Caractère"])
+                        with t1: st.write(row['Histoire'])
+                        with t2: st.write(row['Description'])
+                        
+                        if "Réservé" in statut:
+                            st.markdown(f"""<div class="reserve-button">🧡 Animal déjà réservé</div>""", unsafe_allow_html=True)
+                        else:
+                            st.markdown(f"""<a href="tel:0558736882" class="contact-button">📞 Appeler</a>""", unsafe_allow_html=True)
+                            st.markdown(f"""<a href="mailto:animauxdugranddax@gmail.com?subject=Adoption de {row['Nom']}" class="contact-button">📩 Mail</a>""", unsafe_allow_html=True)
 
     # --- 5. PIED DE PAGE ---
     st.markdown("""
         <div class="footer-container">
-            <div style="color:#222; font-size:0.95em; line-height:1.6;">
-                <b>Refuge Médérique - Association Animaux du Grand Dax</b><br>
+            <div style="color:#222; font-size:0.9em;">
+                <b>Refuge Médéric - Association Animaux du Grand Dax</b><br>
                 182 chemin Lucien Viau, 40990 St-Paul-lès-Dax<br>
                 📞 05 58 73 68 82 | ⏰ 14h00 - 18h00 (Mercredi au Dimanche)
             </div>
-            <div style="font-size:0.85em; color:#666; margin-top:15px; padding-top:15px; border-top:1px solid #ddd;">
-                 © 2026 - Application officielle du Refuge Médérique<br>
+            <div style="font-size:0.8em; color:#666; margin-top:10px; padding-top:10px; border-top:1px solid #ddd;">
+                 © 2026 - Application officielle du Refuge Médéric<br>
                 <b>Association Animaux du Grand Dax</b><br>
                 Développé par Firnaeth. avec passion pour nos amis à quatre pattes
             </div>
@@ -179,4 +159,4 @@ try:
     """, unsafe_allow_html=True)
 
 except Exception as e:
-    st.warning("Veuillez configurer 'public_url' dans les Secrets Streamlit.")
+    st.warning("En attente de configuration du lien secret.")
