@@ -104,7 +104,7 @@ try:
             st.rerun()
 
         # Engagement Santé bien visible
-        st.info("🛡️ **Engagement Santé :** Tous nos protégés sont **vaccinés**, **identifiés** et **stérilisés**.")
+        st.info("🛡️**Engagement Santé :** Tous nos protégés sont **vaccinés** et **identifiés** (puce électronique) avant leur départ du refuge pour une adoption responsable.")
         
         df_filtre = df_dispo.copy()
         if choix_espece != "Tous": df_filtre = df_filtre[df_filtre['Espèce'] == choix_espece]
@@ -146,12 +146,12 @@ try:
     st.markdown("""
         <div class="footer-container">
             <div style="color:#222; font-size:0.95em; line-height:1.6;">
-                <b style="color:#FF0000;">Refuge Médérique - Association Animaux du Grand Dax (Mercredi au Dimanche)</b><br>
+                <b style="color:#FF0000;">Refuge Médéric - Association Animaux du Grand Dax (Mercredi au Dimanche)</b><br>
                 182 chemin Lucien Viau, 40990 St-Paul-lès-Dax<br>
                 📞 05 58 73 68 82 | ⏰ 14h00 - 18h00 (Mercredi au Dimanche)
             </div>
             <div style="font-size:0.85em; color:#666; margin-top:15px; padding-top:15px; border-top:1px solid #ddd;">
-                 © 2026 - Application officielle du Refuge Médérique<br>
+                 © 2026 - Application officielle du Refuge Médéric<br>
                 Développé par Firnaeth.
             </div>
         </div>
