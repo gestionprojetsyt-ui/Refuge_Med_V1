@@ -175,7 +175,7 @@ try:
             </div>
             <div style="font-size:0.85em; color:#666; margin-top:15px; padding-top:15px; border-top:1px solid #ddd;">
                 © 2026 - Application officielle du Refuge Médéric<br>
-                Développé par **Firnaeth.** avec passion pour nos amis à quatre pattes
+                Développé par Firnaeth. avec passion pour nos amis à quatre pattes
             </div>
         </div>
     """, unsafe_allow_html=True)
