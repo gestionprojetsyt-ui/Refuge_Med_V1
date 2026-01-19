@@ -11,7 +11,7 @@ st.set_page_config(
     page_icon="🐾"
 )
 
-# --- 2. CONFIGURATION DU LOGO (TON LIEN) ---
+# --- 2. CONFIGURATION DU LOGO ---
 URL_LOGO_HD = "https://drive.google.com/uc?export=view&id=1M8yTjY6tt5YZhPvixn-EoFIiolwXRn7E" 
 
 @st.cache_data
@@ -27,30 +27,28 @@ def get_base64_image(url):
 
 logo_b64 = get_base64_image(URL_LOGO_HD)
 
-# --- 3. STYLE CSS (AUCUN FOND BLANC / LOGO FLOTTANT) ---
-# On utilise position: fixed pour que le logo soit indépendant du reste
+# --- 3. STYLE CSS (LOGO FLOTTANT, BOUTONS ET FOOTER) ---
 if logo_b64:
     st.markdown(f"""
         <style>
-        /* On rend l'application transparente pour voir l'image derrière */
         .stApp, .stMain, [data-testid="stAppViewContainer"] {{
             background-color: transparent !important;
         }}
         
-        /* IMAGE DE FOND FIXE */
+        /* LOGO EN FOND COUPE */
         .custom-bg {{
             position: fixed;
             top: 20%;
-            left: -15vh; /* Pour couper le logo à moitié à gauche */
+            left: -15vh;
             width: 60vh;
-            opacity: 0.35; /* 35% d'opacité */
-            z-index: -1; /* Derrière tout */
+            opacity: 0.35;
+            z-index: -1;
             pointer-events: none;
         }}
 
         h1 {{ color: #FF0000 !important; font-weight: 800; }}
         
-        /* Style Polaroid */
+        /* STYLE POLAROID */
         [data-testid="stImage"] img {{ 
             border: 10px solid white !important; 
             border-radius: 5px !important; 
@@ -59,14 +57,30 @@ if logo_b64:
             object-fit: cover;
         }}
         
-        .btn-contact {{ 
+        /* BOUTONS CONTACT */
+        .btn-call {{ 
             text-decoration: none !important; color: white !important; background-color: #2e7d32; 
-            padding: 12px; border-radius: 8px; display: block; text-align: center; font-weight: bold; margin-top: 10px;
+            padding: 10px; border-radius: 8px; display: block; text-align: center; font-weight: bold; margin-top: 10px;
+        }}
+        .btn-mail {{ 
+            text-decoration: none !important; color: white !important; background-color: #1976d2; 
+            padding: 10px; border-radius: 8px; display: block; text-align: center; font-weight: bold; margin-top: 10px;
+        }}
+        .btn-reserved {{ 
+            text-decoration: none !important; color: white !important; background-color: #ff8f00; 
+            padding: 10px; border-radius: 8px; display: block; text-align: center; font-weight: bold; margin-top: 10px;
         }}
 
+        /* FOOTER COMPLET */
         .footer {{
-            background-color: rgba(255, 255, 255, 0.8);
-            padding: 20px; border-radius: 15px; margin-top: 50px; text-align: center; border: 2px solid #FF0000;
+            background-color: rgba(255, 255, 255, 0.9);
+            padding: 25px; 
+            border-radius: 15px; 
+            margin-top: 50px; 
+            text-align: center; 
+            border: 2px solid #FF0000; 
+            color: #333;
+            line-height: 1.6;
         }}
         </style>
         
@@ -100,28 +114,31 @@ def format_image_url(url):
             return f"https://drive.google.com/uc?export=view&id={id_photo}"
     return url
 
-# --- 5. CONTENU ---
+# --- 5. INTERFACE ---
 try:
     URL_SHEET = st.secrets["gsheets"]["public_url"]
     df = load_all_data(URL_SHEET)
 
     if not df.empty:
         df_dispo = df[df['Statut'] != "Adopté"].copy()
+        
         st.title("🐾 Refuge Médéric")
         st.markdown("#### Association Animaux du Grand Dax")
 
-        # Filtres
         c1, c2 = st.columns(2)
         with c1:
             choix_espece = st.selectbox("🐶 Espèce", ["Tous"] + sorted(df_dispo['Espèce'].dropna().unique().tolist()))
         with c2:
             choix_age = st.selectbox("🎂 Tranche d'âge", ["Tous", "Moins d'un an (Junior)", "1 à 5 ans (Jeune Adulte)", "5 à 10 ans (Adulte)", "10 ans et plus (Senior)"])
 
-        st.success("🛡️ **Engagement Santé :** Tous nos protégés sont **vaccinés**, **identifiés** (puce électronique) et **stérilisés** avant leur départ du refuge pour une adoption responsable.")
+        st.info("🛡️ **Engagement Santé :** Tous nos protégés sont **vaccinés**, **identifiés** (puce électronique) et **stérilisés** avant leur départ du refuge pour une adoption responsable.")
         
         df_filtre = df_dispo.copy()
         if choix_espece != "Tous": df_filtre = df_filtre[df_filtre['Espèce'] == choix_espece]
         if choix_age != "Tous": df_filtre = df_filtre[df_filtre['Tranche_Age'] == choix_age]
+
+        st.write(f"**{len(df_filtre)}** protégé(s) à l'adoption")
+        st.markdown("---")
 
         for _, row in df_filtre.iterrows():
             with st.container(border=True):
@@ -131,20 +148,33 @@ try:
                     st.image(url_photo if url_photo.startswith('http') else "https://via.placeholder.com/300", use_container_width=True)
                 with col_txt:
                     st.subheader(row['Nom'])
+                    statut = str(row['Statut']).strip()
+                    if "Urgence" in statut: st.error(f"🚨 {statut}")
+                    elif "Réservé" in statut: st.warning(f"🟠 {statut}")
+                    else: st.info(f"🏠 {statut}")
+
                     st.write(f"**{row['Espèce']}** | {row['Sexe']} | **{row['Âge']} ans**")
                     t_hist, t_carac = st.tabs(["📖 Histoire", "📋 Caractère"])
                     with t_hist: st.write(row['Histoire'])
                     with t_carac: st.write(row['Description'])
-                    st.markdown(f"""<a href="tel:0558736882" class="btn-contact">📞 Appeler le refuge</a>""", unsafe_allow_html=True)
+                    
+                    if "Réservé" in statut:
+                        st.markdown('<div class="btn-reserved">Animal déjà réservé</div>', unsafe_allow_html=True)
+                    else:
+                        st.markdown(f'<a href="tel:0558736882" class="btn-call">📞 Appeler le refuge</a>', unsafe_allow_html=True)
+                        st.markdown(f'<a href="mailto:animauxdugranddax@gmail.com?subject=Demande d\'adoption pour {row["Nom"]}" class="btn-mail">📩 Envoyer un Mail</a>', unsafe_allow_html=True)
 
-    # PIED DE PAGE
+    # --- PIED DE PAGE FINAL ---
     st.markdown(f'''
         <div class="footer">
-            © 2026 - Application officielle du Refuge Médérique<br>
+            <b>📍 Adresse :</b> 182 chemin Lucien Viau, 40990 Saint-Paul-lès-Dax<br>
+            <b>📞 Téléphone :</b> 05 58 73 68 82 | <b>⏰ Horaires :</b> 14h00 - 18h00<br>
+            <hr style="border:0; border-top:1px solid #eee; margin:15px 0;">
+            © 2026 - Application officielle du <b>Refuge Médéric</b><br>
             <b>Association Animaux du Grand Dax</b><br>
-            Développé par Firnaeth. avec passion pour nos amis à quatre pattes
+            Développé par <i>Firnaeth.</i> avec passion pour nos amis à quatre pattes
         </div>
     ''', unsafe_allow_html=True)
 
 except Exception as e:
-    st.error("Données indisponibles.")
+    st.error("Erreur de chargement.")
