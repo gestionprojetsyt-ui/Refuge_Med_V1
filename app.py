@@ -27,7 +27,7 @@ def get_base64_image(url):
 
 logo_b64 = get_base64_image(URL_LOGO_HD)
 
-# --- 3. STYLE VISUEL (AUCUN FOND, LOGO DISCRET) ---
+# --- 3. STYLE VISUEL (TOTALEMENT TRANSPARENT) ---
 st.markdown(f"""
     <style>
     /* SUPPRESSION DE TOUS LES FONDS */
@@ -35,18 +35,18 @@ st.markdown(f"""
         background-color: transparent !important;
     }}
 
-    /* LOGO À 0.03 D'OPACITÉ (TRÈS SUBTIL) */
+    /* LOGO À 0.03 D'OPACITÉ */
     .logo-bg {{
         position: fixed;
         top: 25%;
         left: -10vh;
         width: 60vh;
-        opacity: 0.03; /* RÉGLÉ À 3% */
+        opacity: 0.03;
         z-index: -1;
         pointer-events: none;
     }}
     
-    /* SUPPRESSION DES CADRES ET FONDS DES CONTENEURS */
+    /* SUPPRESSION DES CADRES ET DES FONDS BLANCS */
     [data-testid="stVerticalBlockBorderWrapper"] {{
         background-color: transparent !important;
         border: none !important;
@@ -61,7 +61,7 @@ st.markdown(f"""
 
     h1 {{ color: #FF0000 !important; font-weight: 800; }}
     
-    /* POLAROID RESTE AVEC SON BORD BLANC (Pour que la photo ressorte) */
+    /* POLAROID AVEC BORD BLANC POUR LES PHOTOS */
     [data-testid="stImage"] img {{ 
         border: 8px solid white !important; 
         border-radius: 4px !important; 
@@ -82,13 +82,12 @@ st.markdown(f"""
         padding: 12px; border-radius: 8px; display: block; text-align: center; font-weight: bold; margin-top: 10px;
     }}
 
-    /* PIED DE PAGE ÉPURÉ */
+    /* STYLE DU PIED DE PAGE */
     .footer-container {{
         text-align: center;
         margin-top: 50px;
-        padding: 20px;
+        padding: 25px;
         border-top: 1px solid #FF0000;
-        color: #000 !important;
     }}
     </style>
     
@@ -135,7 +134,8 @@ try:
         with c2:
             choix_age = st.selectbox("🎂 Âge", ["Tous", "Junior", "Jeune Adulte", "Adulte", "Senior"])
 
-        st.info("🛡️ **Engagement Santé :** Nos protégés sont vaccinés et identifiés.")
+        # ENGAGEMENT SANTÉ RÉINTÉGRÉ
+        st.info("🛡️ **Engagement Santé :** Tous nos protégés sont **vaccinés**, **identifiés** (puce électronique) et **stérilisés** avant leur départ du refuge pour une adoption responsable.")
         
         df_filtre = df_dispo.copy()
         if choix_espece != "Tous": df_filtre = df_filtre[df_filtre['Espèce'] == choix_espece]
@@ -145,7 +145,8 @@ try:
             with st.container():
                 col_img, col_txt = st.columns([1, 1.2])
                 with col_img:
-                    st.image(format_image_url(row['Photo']), use_container_width=True)
+                    url_photo = format_image_url(row['Photo'])
+                    st.image(url_photo if url_photo.startswith('http') else "https://via.placeholder.com/300", use_container_width=True)
                 with col_txt:
                     st.subheader(row['Nom'])
                     statut = str(row['Statut']).strip()
@@ -161,16 +162,23 @@ try:
                     if "Réservé" in statut:
                         st.markdown(f'<div class="btn-reserve">🧡 Réservé</div>', unsafe_allow_html=True)
                     else:
-                        st.markdown(f'<a href="tel:0558736882" class="btn-contact">📞 Appeler</a>', unsafe_allow_html=True)
-                        st.markdown(f'<a href="mailto:animauxdugranddax@gmail.com?subject=Adoption {row["Nom"]}" class="btn-contact">📩 Mail</a>', unsafe_allow_html=True)
+                        st.markdown(f'<a href="tel:0558736882" class="btn-contact">📞 Appeler le refuge</a>', unsafe_allow_html=True)
+                        st.markdown(f'<a href="mailto:animauxdugranddax@gmail.com?subject=Adoption {row["Nom"]}" class="btn-contact">📩 Envoyer un Mail</a>', unsafe_allow_html=True)
             st.markdown("---")
 
-    st.markdown(f'''
+    # --- PIED DE PAGE PERSONNALISÉ RÉINTÉGRÉ ---
+    st.markdown("""
         <div class="footer-container">
-            <b>Refuge Médéric - Association Animaux du Grand Dax</b><br>
-            182 chemin Lucien Viau, 40990 St-Paul-lès-Dax
+            <div style="color:#222; font-size:0.95em; line-height:1.6;">
+                <b style="color:#FF0000;">Refuge Médéric - Association Animaux du Grand Dax</b><br>
+                182 chemin Lucien Viau, 40990 St-Paul-lès-Dax<br>
+                📞 05 58 73 68 82 | ⏰ 14h00 - 18h00 (Mercredi au Dimanche)
+            </div>
+            <div style="font-size:0.85em; color:#666; margin-top:15px; padding-top:15px; border-top:1px solid #ddd;">
+                Développé par Firnaeth avec passion pour nos amis à quatre pattes.
+            </div>
         </div>
-    ''', unsafe_allow_html=True)
+    """, unsafe_allow_html=True)
 
 except Exception as e:
-    st.error("Connexion impossible.")
+    st.error("Connexion au tableau impossible.")
