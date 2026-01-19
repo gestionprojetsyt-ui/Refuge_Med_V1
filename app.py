@@ -133,7 +133,7 @@ try:
             st.cache_data.clear()
             st.rerun()
 
-        st.info("🛡️ **Engagement Santé :** Tous nos protégés sont **vaccinés**, **identifiés** (puce électronique) et **stérilisés** avant leur départ du refuge pour une adoption responsable.")
+        st.info("🛡️ **Engagement Santé :** Tous nos protégés sont **vaccinés** et **identifiés** (puce électronique) avant leur départ du refuge pour une adoption responsable.")
         
         df_filtre = df_dispo.copy()
         if choix_espece != "Tous": df_filtre = df_filtre[df_filtre['Espèce'] == choix_espece]
@@ -175,7 +175,7 @@ try:
             </div>
             <div style="font-size:0.85em; color:#666; margin-top:15px; padding-top:15px; border-top:1px solid #ddd;">
                 © 2026 - Application officielle du Refuge Médéric<br>
-                Développé par Firnaeth. avec passion pour nos amis à quatre pattes
+                Développé par **Firnaeth.** avec passion pour nos amis à quatre pattes
             </div>
         </div>
     """, unsafe_allow_html=True)
