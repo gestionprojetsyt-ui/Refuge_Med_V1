@@ -28,7 +28,7 @@ def get_base64_image(url):
 logo_b64 = get_base64_image(URL_LOGO_HD)
 
 # --- 3. STYLE VISUEL (COUCHES + CHARTE ROUGE) ---
-# Ici on définit l'opacité du logo à 0.07 et on force les fiches en blanc opaque
+# Ici on définit l'opacité du logo à 0.05 et on force les fiches en blanc opaque
 st.markdown(f"""
     <style>
     /* COUCHE 1 : LE FOND GLOBAL */
@@ -36,13 +36,13 @@ st.markdown(f"""
         background-color: #F8F9FA !important;
     }}
 
-    /* COUCHE 2 : LE LOGO À 0.07 D'OPACITÉ */
+    /* COUCHE 2 : LE LOGO À 0.05 D'OPACITÉ */
     .logo-bg {{
         position: fixed;
         top: 20%;
         left: -15vh;
         width: 65vh;
-        opacity: 0.07; /* RÉGLÉ À 0.7 COMME DEMANDÉ */
+        opacity: 0.05; /* RÉGLÉ À 0.05 COMME DEMANDÉ */
         z-index: 0;
         pointer-events: none;
     }}
