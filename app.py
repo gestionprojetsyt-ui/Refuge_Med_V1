@@ -125,7 +125,7 @@ try:
             choix_age = st.selectbox("🎂 Tranche d'âge", ["Tous", "Moins d'un an (Junior)", "1 à 5 ans (Jeune Adulte)", "5 à 10 ans (Adulte)", "10 ans et plus (Senior)"])
 
         # BLOC INFO BLEU
-        st.info("🛡️ **Engagement Santé :** Tous nos protégés sont **vaccinés**, **identifiés** (puce électronique) et **stérilisés** avant leur départ du refuge pour une adoption responsable.")
+        st.info("🛡️ **Engagement Santé :** Tous nos protégés sont **vaccinés** et **identifiés** (puce électronique) avant leur départ du refuge pour une adoption responsable.")
         
         df_filtre = df_dispo.copy()
         if choix_espece != "Tous": df_filtre = df_filtre[df_filtre['Espèce'] == choix_espece]
@@ -167,7 +167,7 @@ try:
     st.markdown(f'''
         <div class="footer">
             <b>📍 Adresse :</b> 182 chemin Lucien Viau, 40990 Saint-Paul-lès-Dax<br>
-            <b>📞 Téléphone :</b> 05 58 73 68 82 | <b>⏰ Horaires :</b> 14h00 - 18h00<br>
+            <b>📞 Téléphone :</b> 05 58 73 68 82 | <b>⏰ Horaires :</b> 14h00 - 18h00 (Mercredi au Dimanche)<br>
             <hr style="border:0; border-top:1px solid #eee; margin:15px 0;">
             © 2026 - Application officielle du <b>Refuge Médéric</b><br>
             <b>Association Animaux du Grand Dax</b><br>
