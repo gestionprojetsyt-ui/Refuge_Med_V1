@@ -42,7 +42,7 @@ st.markdown(f"""
     <style>
     /* LOGO EN BACKGROUND COUPE A GAUCHE */
     .stApp {{
-        background-image: url("https://drive.google.com/file/d/1-xx9Lw9fbw1ILGKgWEkhXfOfrsGhTcum/view?usp=drive_link");
+        background-image: url("https://drive.google.com/file/d/1-xx9Lw9fbw1ILGKgWEkhXfOfrsGhTcum/view?usp=sharing");
         background-repeat: no-repeat;
         background-attachment: fixed;
         background-size: 60vh; /* Taille du logo */
