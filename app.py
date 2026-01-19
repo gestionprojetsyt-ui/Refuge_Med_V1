@@ -24,7 +24,7 @@ def get_base64_image(url):
 
 logo_b64 = get_base64_image(URL_LOGO_HD)
 
-# --- 3. STYLE CSS (SYSTÈME DE COUCHES) ---
+# --- 3. STYLE CSS (COUCHES + OPACITÉ 11%) ---
 st.markdown(f"""
     <style>
     /* COUCHE 1 : LE FOND DE L'APPLI */
@@ -32,31 +32,31 @@ st.markdown(f"""
         background-color: #F8F9FA !important;
     }}
     
-    /* COUCHE 2 : LE LOGO (ENTRE LE FOND ET LES FICHES) */
+    /* COUCHE 2 : LE LOGO À 11% D'OPACITÉ */
     .logo-couche {{
         position: fixed;
         top: 20%;
-        left: -10vh;
-        width: 55vh;
-        opacity: 0.1;
-        z-index: 0; /* Derrière les fiches */
+        left: -15vh;
+        width: 65vh;
+        opacity: 0.11; /* OPACITÉ RÉDUITE À 11% */
+        z-index: 0;
         pointer-events: none;
     }}
 
-    /* COUCHE 3 : LES FICHES BLANCHES OPAQUES */
+    /* COUCHE 3 : LES FICHES BLANCHES TOTALEMENT OPAQUES */
     [data-testid="stVerticalBlockBorderWrapper"] {{
-        background-color: #FFFFFF !important; /* Blanc Pur */
-        opacity: 1 !important; /* 100% Opaque */
+        background-color: #FFFFFF !important;
+        opacity: 1 !important;
         padding: 20px !important;
         border-radius: 15px !important;
-        border: 1px solid #E0E0E0 !important;
-        box-shadow: 0px 8px 20px rgba(0,0,0,0.1) !important;
+        border: 1px solid #EAEAEA !important;
+        box-shadow: 0px 8px 25px rgba(0,0,0,0.08) !important;
         position: relative;
-        z-index: 10; /* Passe par-dessus le logo */
+        z-index: 10;
         margin-bottom: 25px !important;
     }}
 
-    /* TEXTE NOIR POUR LISIBILITÉ */
+    /* TEXTE NOIR POUR LISIBILITÉ MAXIMALE */
     h1, h2, h3, p, span, li, label, .stExpander {{
         color: #111111 !important;
     }}
@@ -67,7 +67,9 @@ st.markdown(f"""
     [data-testid="stImage"] img {{ 
         border: 8px solid white !important; 
         border-radius: 4px !important; 
-        box-shadow: 0px 4px 12px rgba(0,0,0,0.15) !important;
+        box-shadow: 0px 4px 12px rgba(0,0,0,0.1) !important;
+        height: 320px;
+        object-fit: cover;
     }}
     
     /* BOUTONS CONTACT */
@@ -109,7 +111,7 @@ try:
         df_filtre = df[df['Statut'] != "Adopté"]
 
         for _, row in df_filtre.iterrows():
-            with st.container(border=True): # La fiche blanche opaque
+            with st.container(border=True): 
                 col_img, col_txt = st.columns([1, 1.2])
                 with col_img:
                     st.image(format_image_url(row['Photo']), use_container_width=True)
@@ -133,4 +135,4 @@ try:
     st.markdown(f'''<div class="footer"><b>📍 Refuge Médéric</b><br>182 chemin Lucien Viau, Saint-Paul-lès-Dax</div>''', unsafe_allow_html=True)
 
 except Exception as e:
-    st.error("Chargement...")
+    st.error("Données en cours de chargement...")
