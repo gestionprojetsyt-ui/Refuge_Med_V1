@@ -38,7 +38,7 @@ st.markdown(f"""
         top: 20%;
         left: -10vh;
         width: 55vh;
-        opacity: 0.3;
+        opacity: 0.1;
         z-index: 0; /* Derrière les fiches */
         pointer-events: none;
     }}
