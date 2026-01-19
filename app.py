@@ -11,23 +11,21 @@ st.set_page_config(
     page_icon="🐾"
 )
 
-# --- 2. CONFIGURATION DU LOGO ---
-# METS TON LIEN ICI
-URL_LOGO_HD = "TON_LIEN_ICI" 
+# --- 2. CONFIGURATION DU LOGO (TON LIEN CORRIGÉ) ---
+# J'ai transformé ton lien en lien direct "uc?export=view"
+URL_LOGO_HD = "https://drive.google.com/uc?export=view&id=1-xx9Lw9fbw1ILGKgWEkhXfOfrsGhTcum" 
 
 @st.cache_data
 def get_base64_image(url):
     try:
-        # On ajoute des headers pour simuler un navigateur et éviter d'être bloqué
         headers = {
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36"
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko)"
         }
-        response = requests.get(url, headers=headers, timeout=10)
+        response = requests.get(url, headers=headers, timeout=15)
         if response.status_code == 200:
             return base64.b64encode(response.content).decode()
-        else:
-            return None
-    except Exception as e:
+        return None
+    except:
         return None
 
 logo_b64 = get_base64_image(URL_LOGO_HD)
@@ -40,8 +38,8 @@ if logo_b64:
             background-image: url("data:image/png;base64,{logo_b64}");
             background-repeat: no-repeat;
             background-attachment: fixed;
-            background-size: 60vh; 
-            background-position: -20vh 30%; 
+            background-size: 65vh; 
+            background-position: -25vh 30%; 
         }}
         .stApp::before {{
             content: "";
@@ -68,11 +66,8 @@ if logo_b64:
         }}
         </style>
         """, unsafe_allow_html=True)
-else:
-    # Message d'erreur discret pour toi si l'image ne charge pas
-    st.warning("⚠️ Le logo en arrière-plan n'a pas pu être chargé. Vérifie le lien direct de ton image.")
 
-# --- 4. LOGIQUE DES DONNÉES ---
+# --- 4. FONCTIONS TECHNIQUES ---
 @st.cache_data(ttl=60)
 def load_all_data(url):
     try:
@@ -116,9 +111,23 @@ try:
 
         st.success("🛡️ **Engagement Santé :** Tous nos protégés sont **vaccinés**, **identifiés** (puce électronique) et **stérilisés** avant leur départ du refuge pour une adoption responsable.")
         
-        # Affichage simplifié pour le test
-        st.write(f"**{len(df)}** protégé(s) à l'adoption")
-        st.markdown("---")
+        df_filtre = df.copy()
+        if choix_espece != "Tous": df_filtre = df_filtre[df_filtre['Espèce'] == choix_espece]
+        if choix_age != "Tous": df_filtre = df_filtre[df_filtre['Tranche_Age'] == choix_age]
+
+        for _, row in df_filtre.iterrows():
+            with st.container(border=True):
+                col_img, col_txt = st.columns([1, 1.2])
+                with col_img:
+                    url_photo = format_image_url(row['Photo'])
+                    st.image(url_photo if url_photo.startswith('http') else "https://via.placeholder.com/300", use_container_width=True)
+                with col_txt:
+                    st.subheader(row['Nom'])
+                    st.write(f"**{row['Espèce']}** | {row['Sexe']} | **{row['Âge']} ans**")
+                    t_hist, t_carac = st.tabs(["📖 Histoire", "📋 Caractère"])
+                    with t_hist: st.write(row['Histoire'])
+                    with t_carac: st.write(row['Description'])
+                    st.markdown(f"""<a href="tel:0558736882" class="btn-contact">📞 Appeler le refuge</a>""", unsafe_allow_html=True)
 
     # --- PIED DE PAGE ---
     st.markdown(f'''
