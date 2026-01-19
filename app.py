@@ -27,44 +27,41 @@ def get_base64_image(url):
 
 logo_b64 = get_base64_image(URL_LOGO_HD)
 
-# --- 3. STYLE CSS AMÉLIORÉ POUR LA LISIBILITÉ ---
+# --- 3. STYLE CSS (FOND TRANSPARENT + FICHES BLANCHES OPAQUES) ---
 if logo_b64:
     st.markdown(f"""
         <style>
-        /* Fond global */
-        .stApp {{
-            background-color: #f8f9fa; /* Un gris très clair pour reposer l'oeil */
+        /* 1. On rend TOUT le fond de l'application transparent */
+        .stApp, [data-testid="stAppViewContainer"], [data-testid="stMainViewContainer"] {{
+            background-color: transparent !important;
         }}
         
-        /* Image de fond */
+        /* 2. On place le logo derrière tout */
         .custom-bg {{
             position: fixed;
-            top: 20%;
+            top: 25%;
             left: -15vh;
             width: 60vh;
-            opacity: 0.25; /* Légèrement réduit pour moins gêner la lecture */
-            z-index: 0;
+            opacity: 0.35;
+            z-index: -2;
             pointer-events: none;
         }}
 
-        /* --- PROTECTION DE LA LISIBILITÉ --- */
-        /* On ajoute un fond blanc solide aux conteneurs des animaux */
+        /* 3. ON FORCE LE BLANC SUR LES FICHES POUR LA LISIBILITÉ */
         [data-testid="stVerticalBlockBorderWrapper"] {{
-            background-color: rgba(255, 255, 255, 0.95) !important;
-            padding: 15px;
-            border-radius: 15px;
-            border: 1px solid #eee !important;
-            box-shadow: 0px 4px 10px rgba(0,0,0,0.05);
-            margin-bottom: 20px;
+            background-color: white !important; /* Blanc pur pour lire sur téléphone */
+            padding: 20px !important;
+            border-radius: 15px !important;
+            border: 1px solid #ddd !important;
+            box-shadow: 0px 4px 12px rgba(0,0,0,0.1) !important;
+            margin-bottom: 25px !important;
         }}
 
-        h1 {{ color: #FF0000 !important; font-weight: 800; position: relative; z-index: 1; }}
-        h4 {{ position: relative; z-index: 1; }}
+        h1 {{ color: #FF0000 !important; font-weight: 800; text-shadow: 1px 1px 2px white; }}
         
         [data-testid="stImage"] img {{ 
             border: 5px solid white !important; 
-            border-radius: 10px !important; 
-            box-shadow: 0px 4px 10px rgba(0,0,0,0.1) !important;
+            border-radius: 8px !important; 
             height: 300px;
             object-fit: cover;
         }}
@@ -77,15 +74,10 @@ if logo_b64:
             text-decoration: none !important; color: white !important; background-color: #1976d2; 
             padding: 12px; border-radius: 8px; display: block; text-align: center; font-weight: bold; margin-top: 10px;
         }}
-        .btn-reserved {{ 
-            text-decoration: none !important; color: white !important; background-color: #ff8f00; 
-            padding: 12px; border-radius: 8px; display: block; text-align: center; font-weight: bold; margin-top: 10px;
-        }}
 
         .footer {{
             background-color: white;
-            padding: 25px; border-radius: 15px; margin-top: 50px; text-align: center; border: 2px solid #FF0000; color: #333;
-            position: relative; z-index: 1;
+            padding: 20px; border-radius: 15px; margin-top: 40px; text-align: center; border: 2px solid #FF0000;
         }}
         </style>
         
@@ -141,11 +133,8 @@ try:
         if choix_espece != "Tous": df_filtre = df_filtre[df_filtre['Espèce'] == choix_espece]
         if choix_age != "Tous": df_filtre = df_filtre[df_filtre['Tranche_Age'] == choix_age]
 
-        st.write(f"**{len(df_filtre)}** protégé(s) à l'adoption")
-        st.markdown("---")
-
         for _, row in df_filtre.iterrows():
-            # Utilisation de border=True pour activer le conteneur stylisé
+            # Le paramètre border=True est crucial ici pour que le CSS s'applique
             with st.container(border=True):
                 col_img, col_txt = st.columns([1, 1.2])
                 with col_img:
@@ -153,7 +142,6 @@ try:
                     st.image(url_photo if url_photo.startswith('http') else "https://via.placeholder.com/300", use_container_width=True)
                 with col_txt:
                     st.subheader(row['Nom'])
-                    
                     statut = str(row['Statut']).strip()
                     if "Urgence" in statut: st.error(f"🚨 {statut}")
                     elif "Réservé" in statut: st.warning(f"🟠 {statut}")
@@ -165,7 +153,7 @@ try:
                     with t_carac: st.write(row['Description'])
                     
                     if "Réservé" in statut:
-                        st.markdown('<div class="btn-reserved">Animal déjà réservé</div>', unsafe_allow_html=True)
+                        st.markdown('<div style="background-color:#ff8f00; color:white; padding:10px; border-radius:8px; text-align:center; font-weight:bold;">Animal déjà réservé</div>', unsafe_allow_html=True)
                     else:
                         st.markdown(f'<a href="tel:0558736882" class="btn-call">📞 Appeler le refuge</a>', unsafe_allow_html=True)
                         st.markdown(f'<a href="mailto:animauxdugranddax@gmail.com?subject=Demande d\'adoption pour {row["Nom"]}" class="btn-mail">📩 Envoyer un Mail</a>', unsafe_allow_html=True)
@@ -177,10 +165,9 @@ try:
             <b>📞 Téléphone :</b> 05 58 73 68 82 | <b>⏰ Horaires :</b> 14h00 - 18h00<br>
             <hr style="border:0; border-top:1px solid #eee; margin:15px 0;">
             © 2026 - Application officielle du <b>Refuge Médéric</b><br>
-            <b>Association Animaux du Grand Dax</b><br>
             Développé par <i>Firnaeth.</i> avec passion pour nos amis à quatre pattes
         </div>
     ''', unsafe_allow_html=True)
 
 except Exception as e:
-    st.error("Erreur de chargement.")
+    st.error("Erreur de chargement des données.")
