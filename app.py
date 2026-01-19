@@ -11,15 +11,13 @@ st.set_page_config(
     page_icon="🐾"
 )
 
-# --- 2. CONFIGURATION DE TON NOUVEAU LOGO (LIEN DIRECT) ---
+# --- 2. CONFIGURATION DU LOGO (LIEN DIRECT GOOGLE DRIVE) ---
 URL_LOGO_HD = "https://drive.google.com/uc?export=view&id=1M8yTjY6tt5YZhPvixn-EoFIiolwXRn7E" 
 
 @st.cache_data
 def get_base64_image(url):
     try:
-        headers = {
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko)"
-        }
+        headers = {"User-Agent": "Mozilla/5.0"}
         response = requests.get(url, headers=headers, timeout=15)
         if response.status_code == 200:
             return base64.b64encode(response.content).decode()
@@ -29,27 +27,16 @@ def get_base64_image(url):
 
 logo_b64 = get_base64_image(URL_LOGO_HD)
 
-# --- 3. STYLE CSS (SANS LE VOILE BLANC) ---
+# --- 3. STYLE CSS (LOGO COUPE / PAS DE CADRE / OPACITE 35%) ---
 if logo_b64:
     st.markdown(f"""
         <style>
-        /* CONFIGURATION DU FOND SANS CADRE BLANC */
+        /* On retire tout fond blanc forcé sur les containers Streamlit */
         .stApp {{
-            background-image: url("data:image/png;base64,{logo_b64}");
-            background-repeat: no-repeat;
-            background-attachment: fixed;
-            background-size: 70vh; /* Ajuste la taille ici */
-            background-position: -25vh 30%; /* Coupe de moitié à gauche */
-            background-color: #FFFFFF; /* Fond blanc pur derrière le logo */
-        }}
-
-        /* On règle l'opacité directement sur l'image via un filtre si besoin, 
-           mais ici on va jouer sur le z-index pour que le texte reste lisible */
-        .stApp {{
-            opacity: 1; 
+            background-color: #FFFFFF;
         }}
         
-        /* Pour appliquer l'opacité de 35% uniquement au logo sans affecter le texte */
+        /* Application du logo en fond avec pseudo-élément pour l'opacité */
         .stApp::before {{
             content: "";
             position: fixed;
@@ -58,18 +45,18 @@ if logo_b64:
             background-repeat: no-repeat;
             background-attachment: fixed;
             background-size: 70vh;
-            background-position: -25vh 30%;
-            opacity: 0.35; /* TES 35% D'OPACITÉ ICI */
+            background-position: -25vh 30%; /* Coupe le logo à gauche */
+            opacity: 0.35; /* 35% d'opacité comme demandé */
             z-index: -1;
         }}
 
         h1 {{ color: #FF0000 !important; font-weight: 800; }}
         
-        /* Style Photo Polaroid */
+        /* Style Polaroid pour les photos */
         [data-testid="stImage"] img {{ 
             border: 10px solid white !important; 
             border-radius: 5px !important; 
-            box-shadow: 0px 4px 15px rgba(0,0,0,0.2) !important;
+            box-shadow: 0px 4px 15px rgba(0,0,0,0.1) !important;
             height: 320px;
             object-fit: cover;
         }}
@@ -78,7 +65,7 @@ if logo_b64:
             text-decoration: none !important; color: white !important; background-color: #2e7d32; 
             padding: 12px; border-radius: 8px; display: block; text-align: center; font-weight: bold; margin-top: 10px;
         }}
-        
+
         .footer {{
             background-color: rgba(255, 255, 255, 0.8);
             padding: 25px; border-radius: 15px; margin-top: 50px; text-align: center; border: 2px solid #FF0000; color: #444;
@@ -86,7 +73,7 @@ if logo_b64:
         </style>
         """, unsafe_allow_html=True)
 
-# --- 4. LOGIQUE DES DONNÉES ---
+# --- 4. FONCTIONS TECHNIQUES ---
 @st.cache_data(ttl=60)
 def load_all_data(url):
     try:
@@ -104,19 +91,58 @@ def load_all_data(url):
         return df
     except: return pd.DataFrame()
 
-# --- 5. INTERFACE ---
+def format_image_url(url):
+    url = str(url).strip()
+    if "drive.google.com" in url:
+        match = re.search(r"/d/([^/]+)", url)
+        if match:
+            id_photo = match.group(1)
+            return f"https://drive.google.com/uc?export=view&id={id_photo}"
+    return url
+
+# --- 5. INTERFACE ET AFFICHAGE ---
 try:
     URL_SHEET = st.secrets["gsheets"]["public_url"]
     df = load_all_data(URL_SHEET)
 
     if not df.empty:
+        df_dispo = df[df['Statut'] != "Adopté"].copy()
+
         st.title("🐾 Refuge Médéric")
         st.markdown("#### Association Animaux du Grand Dax")
 
+        # Filtres de recherche
+        c1, c2 = st.columns(2)
+        with c1:
+            choix_espece = st.selectbox("🐶 Espèce", ["Tous"] + sorted(df_dispo['Espèce'].dropna().unique().tolist()))
+        with c2:
+            choix_age = st.selectbox("🎂 Tranche d'âge", ["Tous", "Moins d'un an (Junior)", "1 à 5 ans (Jeune Adulte)", "5 à 10 ans (Adulte)", "10 ans et plus (Senior)"])
+
+        # Engagement Santé
         st.success("🛡️ **Engagement Santé :** Tous nos protégés sont **vaccinés**, **identifiés** (puce électronique) et **stérilisés** avant leur départ du refuge pour une adoption responsable.")
         
-        # Le reste de ton code d'affichage (filtres, boucles...) se place ici
-        st.write(f"Catalogue des **{len(df)}** animaux disponibles")
+        # Application des filtres
+        df_filtre = df_dispo.copy()
+        if choix_espece != "Tous": df_filtre = df_filtre[df_filtre['Espèce'] == choix_espece]
+        if choix_age != "Tous": df_filtre = df_filtre[df_filtre['Tranche_Age'] == choix_age]
+
+        st.write(f"**{len(df_filtre)}** protégé(s) à l'adoption")
+        st.markdown("---")
+
+        # Boucle d'affichage des animaux
+        for _, row in df_filtre.iterrows():
+            with st.container(border=True):
+                col_img, col_txt = st.columns([1, 1.2])
+                with col_img:
+                    url_photo = format_image_url(row['Photo'])
+                    st.image(url_photo if url_photo.startswith('http') else "https://via.placeholder.com/300", use_container_width=True)
+                with col_txt:
+                    st.subheader(row['Nom'])
+                    st.write(f"**{row['Espèce']}** | {row['Sexe']} | **{row['Âge']} ans**")
+                    t_hist, t_carac = st.tabs(["📖 Histoire", "📋 Caractère"])
+                    with t_hist: st.write(row['Histoire'])
+                    with t_carac: st.write(row['Description'])
+                    st.markdown(f"""<a href="tel:0558736882" class="btn-contact">📞 Appeler le refuge</a>""", unsafe_allow_html=True)
 
     # --- PIED DE PAGE ---
     st.markdown(f'''
@@ -128,4 +154,4 @@ try:
     ''', unsafe_allow_html=True)
 
 except Exception as e:
-    st.error("Erreur lors du chargement des données.")
+    st.error("Impossible de charger les données. Vérifiez vos Secrets Streamlit.")
