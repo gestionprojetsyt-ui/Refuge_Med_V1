@@ -11,7 +11,7 @@ st.set_page_config(
     page_icon="🐾"
 )
 
-# --- 2. LOGO EN ARRIÈRE-PLAN (OPACITÉ 0.03) ---
+# --- 2. GESTION DU LOGO EN FOND (OPACITÉ 0.03) ---
 URL_LOGO_HD = "https://drive.google.com/uc?export=view&id=1M8yTjY6tt5YZhPvixn-EoFIiolwXRn7E" 
 
 @st.cache_data
@@ -27,44 +27,37 @@ def get_base64_image(url):
 
 logo_b64 = get_base64_image(URL_LOGO_HD)
 
-# --- 3. STYLE VISUEL (COUCHES OPAQUES + CHARTE ROUGE) ---
+# --- 3. STYLE VISUEL (FONDS SOLIDES + LOGO DISCRET) ---
 st.markdown(f"""
     <style>
-    /* COUCHE 1 : LE FOND DE L'APPLI (GRIS TRÈS CLAIR) */
+    /* FOND DE L'APPLICATION (GRIS CLAIR COMME AVANT) */
     .stApp {{
-        background-color: #F8F9FA !important;
+        background-color: #f5f5f5 !important;
     }}
 
-    /* COUCHE 2 : LE LOGO À 0.03 D'OPACITÉ */
+    /* LOGO À 0.03 D'OPACITÉ */
     .logo-bg {{
         position: fixed;
         top: 25%;
         left: -10vh;
         width: 60vh;
         opacity: 0.03;
-        z-index: 0; /* Entre le fond et les fiches */
+        z-index: 0;
         pointer-events: none;
     }}
     
-    /* COUCHE 3 : LES FICHES BLANCHES 100% OPAQUES */
-    [data-testid="stVerticalBlockBorderWrapper"] {{
-        background-color: #FFFFFF !important;
-        opacity: 1 !important;
-        padding: 20px !important;
-        border-radius: 15px !important;
-        border: 1px solid #EAEAEA !important;
-        box-shadow: 0px 8px 25px rgba(0,0,0,0.08) !important;
-        position: relative;
-        z-index: 10; /* Passe par-dessus le logo */
-        margin-bottom: 25px !important;
-    }}
-
     /* TITRE EN ROUGE */
     h1 {{ color: #FF0000 !important; font-weight: 800; }}
     
-    /* TEXTE NOIR POUR LISIBILITÉ MAXIMALE */
-    h2, h3, p, span, li, label, .stExpander {{
-        color: #111111 !important;
+    /* FICHES BLANCHES SOLIDES (Z-INDEX POUR ÊTRE SUR LE LOGO) */
+    [data-testid="stVerticalBlockBorderWrapper"] {{
+        background-color: white !important;
+        border-radius: 15px !important;
+        border: 1px solid #ddd !important;
+        box-shadow: 0px 4px 12px rgba(0,0,0,0.1) !important;
+        padding: 20px !important;
+        position: relative;
+        z-index: 1;
     }}
 
     /* EFFET POLAROID */
@@ -76,7 +69,7 @@ st.markdown(f"""
         height: 320px;
     }}
     
-    /* BOUTONS CONTACT VERTS */
+    /* BOUTONS CONTACT VERT */
     .btn-contact {{ 
         text-decoration: none !important; color: white !important; background-color: #2e7d32; 
         padding: 12px; border-radius: 8px; display: block; text-align: center; font-weight: bold; margin-top: 10px;
@@ -88,16 +81,16 @@ st.markdown(f"""
         padding: 12px; border-radius: 8px; display: block; text-align: center; font-weight: bold; margin-top: 10px;
     }}
 
-    /* PIED DE PAGE BLANC OPAQUE */
+    /* PIED DE PAGE AVEC CADRE ROUGE */
     .footer-container {{
         background-color: white;
-        text-align: center;
-        margin-top: 50px;
         padding: 25px;
         border-radius: 15px;
+        margin-top: 50px;
+        text-align: center;
         border: 2px solid #FF0000;
         position: relative;
-        z-index: 10;
+        z-index: 1;
     }}
     </style>
     
@@ -148,6 +141,10 @@ try:
         with c2:
             choix_age = st.selectbox("🎂 Tranche d'âge", ["Tous", "Moins d'un an (Junior)", "1 à 5 ans (Jeune Adulte)", "5 à 10 ans (Adulte)", "10 ans et plus (Senior)"])
 
+        if st.button("🔄 Actualiser le catalogue"):
+            st.cache_data.clear()
+            st.rerun()
+
         # ENGAGEMENT SANTÉ COMPLET
         st.info("🛡️ **Engagement Santé :** Tous nos protégés sont **vaccinés**, **identifiés** (puce électronique) et **stérilisés** avant leur départ du refuge pour une adoption responsable.")
         
@@ -159,7 +156,7 @@ try:
         st.markdown("---")
 
         for _, row in df_filtre.iterrows():
-            with st.container(border=True): # Retour de la fiche blanche
+            with st.container(border=True): # Fiches blanches solides
                 col_img, col_txt = st.columns([1, 1.2])
                 with col_img:
                     url_photo = format_image_url(row['Photo'])
@@ -182,7 +179,7 @@ try:
                         st.markdown(f'<a href="tel:0558736882" class="btn-contact">📞 Appeler le refuge</a>', unsafe_allow_html=True)
                         st.markdown(f'<a href="mailto:animauxdugranddax@gmail.com?subject=Adoption de {row["Nom"]}" class="btn-contact">📩 Envoyer un Mail</a>', unsafe_allow_html=True)
 
-    # --- 6. PIED DE PAGE PERSONNALISÉ ---
+    # --- 6. PIED DE PAGE ---
     st.markdown("""
         <div class="footer-container">
             <div style="color:#222; font-size:0.95em; line-height:1.6;">
@@ -191,12 +188,12 @@ try:
                 📞 05 58 73 68 82 | ⏰ 14h00 - 18h00 (Mercredi au Dimanche)
             </div>
             <div style="font-size:0.85em; color:#666; margin-top:15px; padding-top:15px; border-top:1px solid #ddd;">
-                © 2026 - Application officielle du Refuge Médéric<br>
+                 © 2026 - Application officielle du Refuge Médéric<br>
                 Développé par Firnaeth avec passion pour nos amis à quatre pattes.
             </div>
         </div>
     """, unsafe_allow_html=True)
 
 except Exception as e:
-    st.error("Erreur de chargement.")
+    st.error("Lien 'public_url' manquant dans les Secrets.")
     
