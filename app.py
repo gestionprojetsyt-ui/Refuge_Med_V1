@@ -11,7 +11,7 @@ st.set_page_config(
     page_icon="🐾"
 )
 
-# --- 2. CONFIGURATION DU LOGO (OPACITÉ 0.03) ---
+# --- 2. LOGO EN ARRIÈRE-PLAN (OPACITÉ 0.03) ---
 URL_LOGO_HD = "https://drive.google.com/uc?export=view&id=1M8yTjY6tt5YZhPvixn-EoFIiolwXRn7E" 
 
 @st.cache_data
@@ -27,50 +27,56 @@ def get_base64_image(url):
 
 logo_b64 = get_base64_image(URL_LOGO_HD)
 
-# --- 3. STYLE VISUEL (TOTALEMENT TRANSPARENT) ---
+# --- 3. STYLE VISUEL (COUCHES OPAQUES + CHARTE ROUGE) ---
 st.markdown(f"""
     <style>
-    /* SUPPRESSION DE TOUS LES FONDS */
+    /* COUCHE 1 : LE FOND DE L'APPLI (GRIS TRÈS CLAIR) */
     .stApp {{
-        background-color: transparent !important;
+        background-color: #F8F9FA !important;
     }}
 
-    /* LOGO À 0.03 D'OPACITÉ */
+    /* COUCHE 2 : LE LOGO À 0.03 D'OPACITÉ */
     .logo-bg {{
         position: fixed;
         top: 25%;
         left: -10vh;
         width: 60vh;
         opacity: 0.03;
-        z-index: -1;
+        z-index: 0; /* Entre le fond et les fiches */
         pointer-events: none;
     }}
     
-    /* SUPPRESSION DES CADRES ET DES FONDS BLANCS */
+    /* COUCHE 3 : LES FICHES BLANCHES 100% OPAQUES */
     [data-testid="stVerticalBlockBorderWrapper"] {{
-        background-color: transparent !important;
-        border: none !important;
-        box-shadow: none !important;
-        padding: 0px !important;
+        background-color: #FFFFFF !important;
+        opacity: 1 !important;
+        padding: 20px !important;
+        border-radius: 15px !important;
+        border: 1px solid #EAEAEA !important;
+        box-shadow: 0px 8px 25px rgba(0,0,0,0.08) !important;
+        position: relative;
+        z-index: 10; /* Passe par-dessus le logo */
+        margin-bottom: 25px !important;
     }}
 
-    /* TEXTE NOIR POUR ÊTRE LISIBLE */
-    h1, h2, h3, p, span, li, label, .stExpander {{
-        color: #000000 !important;
-    }}
-
+    /* TITRE EN ROUGE */
     h1 {{ color: #FF0000 !important; font-weight: 800; }}
     
-    /* POLAROID AVEC BORD BLANC POUR LES PHOTOS */
+    /* TEXTE NOIR POUR LISIBILITÉ MAXIMALE */
+    h2, h3, p, span, li, label, .stExpander {{
+        color: #111111 !important;
+    }}
+
+    /* EFFET POLAROID */
     [data-testid="stImage"] img {{ 
-        border: 8px solid white !important; 
-        border-radius: 4px !important; 
-        box-shadow: 0px 4px 10px rgba(0,0,0,0.1) !important;
-        height: 300px;
+        border: 10px solid white !important; 
+        border-radius: 5px !important; 
+        box-shadow: 0px 4px 12px rgba(0,0,0,0.2) !important;
         object-fit: cover;
+        height: 320px;
     }}
     
-    /* BOUTONS CONTACT VERT */
+    /* BOUTONS CONTACT VERTS */
     .btn-contact {{ 
         text-decoration: none !important; color: white !important; background-color: #2e7d32; 
         padding: 12px; border-radius: 8px; display: block; text-align: center; font-weight: bold; margin-top: 10px;
@@ -82,19 +88,24 @@ st.markdown(f"""
         padding: 12px; border-radius: 8px; display: block; text-align: center; font-weight: bold; margin-top: 10px;
     }}
 
-    /* STYLE DU PIED DE PAGE */
+    /* PIED DE PAGE BLANC OPAQUE */
     .footer-container {{
+        background-color: white;
         text-align: center;
         margin-top: 50px;
         padding: 25px;
-        border-top: 1px solid #FF0000;
+        border-radius: 15px;
+        border: 2px solid #FF0000;
+        position: relative;
+        z-index: 10;
     }}
     </style>
     
     <img src="data:image/png;base64,{logo_b64 if logo_b64 else ''}" class="logo-bg">
     """, unsafe_allow_html=True)
 
-# --- 4. DATA ---
+# --- 4. FONCTIONS TECHNIQUES ---
+
 @st.cache_data(ttl=60)
 def load_all_data(url):
     try:
@@ -103,10 +114,10 @@ def load_all_data(url):
         def categoriser_age(age):
             try:
                 age = float(str(age).replace(',', '.'))
-                if age < 1: return "Junior"
-                elif 1 <= age <= 5: return "Jeune Adulte"
-                elif 5 < age < 10: return "Adulte"
-                else: return "Senior"
+                if age < 1: return "Moins d'un an (Junior)"
+                elif 1 <= age <= 5: return "1 à 5 ans (Jeune Adulte)"
+                elif 5 < age < 10: return "5 à 10 ans (Adulte)"
+                else: return "10 ans et plus (Senior)"
             except: return "Non précisé"
         df['Tranche_Age'] = df['Âge'].apply(categoriser_age)
         return df
@@ -120,29 +131,35 @@ def format_image_url(url):
     return url
 
 # --- 5. INTERFACE ---
+
 try:
     URL_SHEET = st.secrets["gsheets"]["public_url"]
     df = load_all_data(URL_SHEET)
 
     if not df.empty:
         df_dispo = df[df['Statut'] != "Adopté"].copy()
+
         st.title("🐾 Refuge Médéric")
-        
+        st.markdown("#### Association Animaux du Grand Dax")
+
         c1, c2 = st.columns(2)
         with c1:
             choix_espece = st.selectbox("🐶 Espèce", ["Tous"] + sorted(df_dispo['Espèce'].dropna().unique().tolist()))
         with c2:
-            choix_age = st.selectbox("🎂 Âge", ["Tous", "Junior", "Jeune Adulte", "Adulte", "Senior"])
+            choix_age = st.selectbox("🎂 Tranche d'âge", ["Tous", "Moins d'un an (Junior)", "1 à 5 ans (Jeune Adulte)", "5 à 10 ans (Adulte)", "10 ans et plus (Senior)"])
 
-        # ENGAGEMENT SANTÉ RÉINTÉGRÉ
+        # ENGAGEMENT SANTÉ COMPLET
         st.info("🛡️ **Engagement Santé :** Tous nos protégés sont **vaccinés**, **identifiés** (puce électronique) et **stérilisés** avant leur départ du refuge pour une adoption responsable.")
         
         df_filtre = df_dispo.copy()
         if choix_espece != "Tous": df_filtre = df_filtre[df_filtre['Espèce'] == choix_espece]
         if choix_age != "Tous": df_filtre = df_filtre[df_filtre['Tranche_Age'] == choix_age]
 
+        st.write(f"**{len(df_filtre)}** protégé(s) à l'adoption")
+        st.markdown("---")
+
         for _, row in df_filtre.iterrows():
-            with st.container():
+            with st.container(border=True): # Retour de la fiche blanche
                 col_img, col_txt = st.columns([1, 1.2])
                 with col_img:
                     url_photo = format_image_url(row['Photo'])
@@ -160,13 +177,12 @@ try:
                     with t_carac: st.write(row['Description'])
                     
                     if "Réservé" in statut:
-                        st.markdown(f'<div class="btn-reserve">🧡 Réservé</div>', unsafe_allow_html=True)
+                        st.markdown(f'<div class="btn-reserve">🧡 Animal déjà réservé</div>', unsafe_allow_html=True)
                     else:
                         st.markdown(f'<a href="tel:0558736882" class="btn-contact">📞 Appeler le refuge</a>', unsafe_allow_html=True)
-                        st.markdown(f'<a href="mailto:animauxdugranddax@gmail.com?subject=Adoption {row["Nom"]}" class="btn-contact">📩 Envoyer un Mail</a>', unsafe_allow_html=True)
-            st.markdown("---")
+                        st.markdown(f'<a href="mailto:animauxdugranddax@gmail.com?subject=Adoption de {row["Nom"]}" class="btn-contact">📩 Envoyer un Mail</a>', unsafe_allow_html=True)
 
-    # --- PIED DE PAGE PERSONNALISÉ RÉINTÉGRÉ ---
+    # --- 6. PIED DE PAGE PERSONNALISÉ ---
     st.markdown("""
         <div class="footer-container">
             <div style="color:#222; font-size:0.95em; line-height:1.6;">
@@ -175,10 +191,12 @@ try:
                 📞 05 58 73 68 82 | ⏰ 14h00 - 18h00 (Mercredi au Dimanche)
             </div>
             <div style="font-size:0.85em; color:#666; margin-top:15px; padding-top:15px; border-top:1px solid #ddd;">
+                © 2026 - Application officielle du Refuge Médéric<br>
                 Développé par Firnaeth avec passion pour nos amis à quatre pattes.
             </div>
         </div>
     """, unsafe_allow_html=True)
 
 except Exception as e:
-    st.error("Connexion au tableau impossible.")
+    st.error("Erreur de chargement.")
+    
