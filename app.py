@@ -11,7 +11,7 @@ st.set_page_config(
     page_icon="🐾"
 )
 
-# --- 2. CONFIGURATION DU LOGO ---
+# --- 2. CONFIGURATION DU LOGO (TON LIEN DRIVE) ---
 URL_LOGO_HD = "https://drive.google.com/uc?export=view&id=1M8yTjY6tt5YZhPvixn-EoFIiolwXRn7E" 
 
 @st.cache_data
@@ -27,7 +27,7 @@ def get_base64_image(url):
 
 logo_b64 = get_base64_image(URL_LOGO_HD)
 
-# --- 3. STYLE CSS ---
+# --- 3. STYLE CSS (LOGO FLOTTANT, BOUTONS ET FOOTER) ---
 if logo_b64:
     st.markdown(f"""
         <style>
@@ -35,6 +35,7 @@ if logo_b64:
             background-color: transparent !important;
         }}
         
+        /* IMAGE DE FOND FIXE COUPEE A GAUCHE */
         .custom-bg {{
             position: fixed;
             top: 20%;
@@ -47,6 +48,7 @@ if logo_b64:
 
         h1 {{ color: #FF0000 !important; font-weight: 800; }}
         
+        /* Style Polaroid */
         [data-testid="stImage"] img {{ 
             border: 10px solid white !important; 
             border-radius: 5px !important; 
@@ -55,19 +57,7 @@ if logo_b64:
             object-fit: cover;
         }}
         
-        /* BADGES DE STATUT PERSONNALISÉS */
-        .badge {{
-            padding: 8px 12px;
-            border-radius: 20px;
-            color: white;
-            font-weight: bold;
-            display: inline-block;
-            margin-bottom: 10px;
-        }}
-        .badge-adoption {{ background-color: #0077b6; }} /* NOUVEAU BLEU AZUR */
-        .badge-urgence {{ background-color: #d32f2f; }} /* ROUGE */
-        .badge-reserve {{ background-color: #ef6c00; }} /* ORANGE */
-
+        /* BOUTONS CONTACT */
         .btn-call {{ 
             text-decoration: none !important; color: white !important; background-color: #2e7d32; 
             padding: 10px; border-radius: 8px; display: block; text-align: center; font-weight: bold; margin-top: 10px;
@@ -76,7 +66,12 @@ if logo_b64:
             text-decoration: none !important; color: white !important; background-color: #1976d2; 
             padding: 10px; border-radius: 8px; display: block; text-align: center; font-weight: bold; margin-top: 10px;
         }}
+        .btn-reserved {{ 
+            text-decoration: none !important; color: white !important; background-color: #ff8f00; 
+            padding: 10px; border-radius: 8px; display: block; text-align: center; font-weight: bold; margin-top: 10px;
+        }}
 
+        /* FOOTER */
         .footer {{
             background-color: rgba(255, 255, 255, 0.9);
             padding: 25px; border-radius: 15px; margin-top: 50px; text-align: center; border: 2px solid #FF0000; color: #333;
@@ -120,7 +115,6 @@ try:
 
     if not df.empty:
         df_dispo = df[df['Statut'] != "Adopté"].copy()
-        
         st.title("🐾 Refuge Médéric")
         st.markdown("#### Association Animaux du Grand Dax")
 
@@ -130,11 +124,15 @@ try:
         with c2:
             choix_age = st.selectbox("🎂 Tranche d'âge", ["Tous", "Moins d'un an (Junior)", "1 à 5 ans (Jeune Adulte)", "5 à 10 ans (Adulte)", "10 ans et plus (Senior)"])
 
+        # BLOC INFO BLEU
         st.info("🛡️ **Engagement Santé :** Tous nos protégés sont **vaccinés**, **identifiés** (puce électronique) et **stérilisés** avant leur départ du refuge pour une adoption responsable.")
         
         df_filtre = df_dispo.copy()
         if choix_espece != "Tous": df_filtre = df_filtre[df_filtre['Espèce'] == choix_espece]
         if choix_age != "Tous": df_filtre = df_filtre[df_filtre['Tranche_Age'] == choix_age]
+
+        st.write(f"**{len(df_filtre)}** protégé(s) à l'adoption")
+        st.markdown("---")
 
         for _, row in df_filtre.iterrows():
             with st.container(border=True):
@@ -145,15 +143,14 @@ try:
                 with col_txt:
                     st.subheader(row['Nom'])
                     
-                    # --- GESTION DES BADGES DE STATUT ---
+                    # GESTION DES COULEURS DE STATUT (COMME AVANT)
                     statut = str(row['Statut']).strip()
                     if "Urgence" in statut:
-                        st.markdown(f'<div class="badge badge-urgence">🚨 {statut}</div>', unsafe_allow_html=True)
+                        st.error(f"🚨 {statut}")
                     elif "Réservé" in statut:
-                        st.markdown(f'<div class="badge badge-reserve">🟠 {statut}</div>', unsafe_allow_html=True)
+                        st.warning(f"🟠 {statut}")
                     else:
-                        # LE NOUVEAU BLEU EST ICI
-                        st.markdown(f'<div class="badge badge-adoption">🏠 {statut}</div>', unsafe_allow_html=True)
+                        st.info(f"🏠 {statut}")
 
                     st.write(f"**{row['Espèce']}** | {row['Sexe']} | **{row['Âge']} ans**")
                     t_hist, t_carac = st.tabs(["📖 Histoire", "📋 Caractère"])
@@ -161,16 +158,16 @@ try:
                     with t_carac: st.write(row['Description'])
                     
                     if "Réservé" in statut:
-                        st.markdown('<div class="badge badge-reserve" style="display:block; text-align:center;">Animal déjà réservé</div>', unsafe_allow_html=True)
+                        st.markdown('<div class="btn-reserved">Animal déjà réservé</div>', unsafe_allow_html=True)
                     else:
                         st.markdown(f'<a href="tel:0558736882" class="btn-call">📞 Appeler le refuge</a>', unsafe_allow_html=True)
                         st.markdown(f'<a href="mailto:animauxdugranddax@gmail.com?subject=Demande d\'adoption pour {row["Nom"]}" class="btn-mail">📩 Envoyer un Mail</a>', unsafe_allow_html=True)
 
-    # --- PIED DE PAGE ---
+    # PIED DE PAGE
     st.markdown(f'''
         <div class="footer">
             <b>📍 Adresse :</b> 182 chemin Lucien Viau, 40990 Saint-Paul-lès-Dax<br>
-            <b>📞 Téléphone :</b> 05 58 73 68 82 | <b>⏰ Horaires :</b> 14h00 - 18h00 (Mercredi au Dimanche)<br>
+            <b>📞 Téléphone :</b> 05 58 73 68 82 | <b>⏰ Horaires :</b> 14h00 - 18h00<br>
             <hr style="border:0; border-top:1px solid #eee; margin:15px 0;">
             © 2026 - Application officielle du <b>Refuge Médéric</b><br>
             <b>Association Animaux du Grand Dax</b><br>
