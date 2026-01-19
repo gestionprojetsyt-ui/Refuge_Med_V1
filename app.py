@@ -41,7 +41,7 @@ st.markdown(f"""
         left: 50%;
         transform: translate(-50%, -50%);
         width: 70vw;
-        opacity: 0.04; /* Ajusté à 4% pour être visible mais discret */
+        opacity: 0.05; /* Ajusté à 5% pour être visible mais discret */
         z-index: -1; /* Au-dessus du fond, mais sous le texte/fiches */
         pointer-events: none;
     }}
