@@ -5,13 +5,25 @@ import requests
 import base64
 
 # --- 1. CONFIGURATION DE LA PAGE ---
-# On remplace l'icône "🐾" par l'URL de ton logo pour l'onglet du navigateur
 URL_LOGO_HD = "https://drive.google.com/uc?export=view&id=1M8yTjY6tt5YZhPvixn-EoFIiolwXRn7E"
 
+@st.cache_data
+def get_base64_image(url):
+    try:
+        response = requests.get(url, headers={"User-Agent": "Mozilla/5.0"}, timeout=10)
+        if response.status_code == 200:
+            return base64.b64encode(response.content).decode()
+    except:
+        return None
+    return None
+
+logo_b64 = get_base64_image(URL_LOGO_HD)
+
+# On utilise l'image encodée pour l'onglet
 st.set_page_config(
     page_title="Refuge Médéric - Association Animaux du Grand Dax", 
     layout="centered", 
-    page_icon=URL_LOGO_HD  # <-- Le logo s'affiche maintenant dans l'onglet !
+    page_icon=f"data:image/png;base64,{logo_b64}" if logo_b64 else "🐾"
 )
 
 # --- 2. RÉCUPÉRATION DU LOGO POUR LE FOND ---
