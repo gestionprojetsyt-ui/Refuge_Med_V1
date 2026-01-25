@@ -14,9 +14,7 @@ st.set_page_config(
     page_icon=URL_LOGO_HD  # <-- Le logo s'affiche maintenant dans l'onglet !
 )
 
-# --- 2. RÉCUPÉRATION DU LOGO ---
-URL_LOGO_HD = "https://drive.google.com/uc?export=view&id=1M8yTjY6tt5YZhPvixn-EoFIiolwXRn7E" 
-
+# --- 2. RÉCUPÉRATION DU LOGO POUR LE FOND ---
 @st.cache_data
 def get_base64_image(url):
     try:
