@@ -11,7 +11,7 @@ Cette application a été conçue pour faciliter la mise en avant de nos protég
 - **Contact Direct** : Bouton d'email pré-rempli pour faciliter les demandes d'adoption.
 
 ## 🛡️ Engagement Santé
-Tous les animaux présentés sont **vaccinésn et identifiés avant leur adoption pour garantir leur bien-être et celui de leur future famille.
+Tous les animaux présentés sont **vaccinés** et **identifiés** avant leur adoption pour garantir leur bien-être et celui de leur future famille.
 
 ## 🛠️ Installation et Technologies
 L'application est développée avec **Python** et le framework **Streamlit**.
