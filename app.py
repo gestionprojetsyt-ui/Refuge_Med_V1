@@ -25,112 +25,97 @@ st.set_page_config(
     page_icon=f"data:image/png;base64,{logo_b64}" if logo_b64 else "🐾"
 )
 
-# --- 2. FONCTION POP-UP ÉVÉNEMENT ---
-@st.dialog("📢 ÉVÉNEMENT À VENIR")
-def afficher_evenement():
-    # Remplace l'ID par celui de ton affiche d'événement quand tu l'auras
-    ID_AFFICHE = "1M8yTjY6tt5YZhPvixn-EoFIiolwXRn7E" 
-    st.image(f"https://drive.google.com/uc?export=view&id={ID_AFFICHE}", use_container_width=True)
-    st.markdown("""
-    ### 🐾 Journée Spéciale au Refuge
-    Rejoignez-nous pour notre prochain événement solidaire !
-    - **Lieu :** Refuge Médéric, St-Paul-lès-Dax
-    - **Infos :** Retrouvez tous les détails sur notre site internet.
-    """)
-    if st.button("Découvrir nos animaux"):
-        st.rerun()
-
-# --- 3. STYLE VISUEL CSS ---
-st.markdown(f"""
-    <style>
-    .stApp {{ background-color: transparent !important; }}
-
-    .logo-overlay {{
-        position: fixed; top: 50%; left: 50%;
-        transform: translate(-50%, -50%);
-        width: 70vw; opacity: 0.04; z-index: -1;
-        pointer-events: none;
-    }}
-
-    [data-testid="stVerticalBlockBorderWrapper"] {{
-        background-color: white !important;
-        border-radius: 15px !important;
-        border: 1px solid #ddd !important;
-        box-shadow: 0px 4px 12px rgba(0,0,0,0.08) !important;
-        padding: 20px !important;
-        margin-bottom: 20px !important;
-    }}
-
-    h1 {{ color: #FF0000 !important; font-weight: 800; }}
-    
-    .btn-contact {{ 
-        text-decoration: none !important; color: white !important; background-color: #2e7d32; 
-        padding: 12px; border-radius: 8px; display: block; text-align: center; font-weight: bold; margin-top: 10px;
-    }}
-    
-    .btn-reserve {{ 
-        text-decoration: none !important; color: white !important; background-color: #ff8f00; 
-        padding: 12px; border-radius: 8px; display: block; text-align: center; font-weight: bold; margin-top: 10px;
-    }}
-
-    [data-testid="stImage"] img {{ 
-        border: 8px solid white !important; 
-        box-shadow: 0px 4px 10px rgba(0,0,0,0.2) !important;
-        height: 320px;
-        object-fit: cover;
-    }}
-
-    .footer-container {{
-        background-color: white;
-        padding: 25px;
-        border-radius: 15px;
-        margin-top: 50px;
-        text-align: center;
-        border: 2px solid #FF0000;
-    }}
-    </style>
-    
-    <img src="data:image/png;base64,{logo_b64 if logo_b64 else ''}" class="logo-overlay">
-    """, unsafe_allow_html=True)
-
-# --- 4. DATA ---
-@st.cache_data(ttl=60)
-def load_all_data(url):
-    try:
-        csv_url = url.replace('/edit?usp=sharing', '/export?format=csv').replace('/edit#gid=', '/export?format=csv&gid=')
-        df = pd.read_csv(csv_url, engine='c', low_memory=False)
-        def categoriser_age(age):
-            try:
-                age = float(str(age).replace(',', '.'))
-                if age < 1: return "Moins d'un an (Junior)"
-                elif 1 <= age <= 5: return "1 à 5 ans (Jeune Adulte)"
-                elif 5 < age < 10: return "5 à 10 ans (Adulte)"
-                else: return "10 ans et plus (Senior)"
-            except: return "Non précisé"
-        df['Tranche_Age'] = df['Âge'].apply(categoriser_age)
-        return df
-    except: return pd.DataFrame()
+# --- 2. FONCTIONS DE CHARGEMENT ---
 
 def format_image_url(url):
     url = str(url).strip()
     if "drive.google.com" in url:
-        match = re.search(r"/d/([^/]+)", url)
-        if match: return f"https://drive.google.com/uc?export=view&id={match.group(1)}"
+        # Extrait l'ID qu'importe le format du lien Drive
+        match = re.search(r"/d/([^/]+)|id=([^&]+)", url)
+        if match:
+            doc_id = match.group(1) or match.group(2)
+            return f"https://drive.google.com/uc?export=view&id={doc_id}"
     return url
 
-# --- 5. INTERFACE ---
+@st.cache_data(ttl=60)
+def load_data_from_sheets(base_url):
+    try:
+        clean_url = base_url.split('/edit')[0]
+        # Chargement des animaux (Feuille 1)
+        df_animaux = pd.read_csv(f"{clean_url}/export?format=csv")
+        
+        # Chargement de la config (Onglet nommé 'Config')
+        config_url = f"{clean_url}/gviz/tq?tqx=out:csv&sheet=Config"
+        df_config = pd.read_csv(config_url)
+        return df_animaux, df_config
+    except:
+        return pd.DataFrame(), pd.DataFrame()
+
+# --- 3. POP-UP ÉVÉNEMENT ---
+@st.dialog("📢 ÉVÉNEMENT AU REFUGE")
+def afficher_evenement(url_affiche):
+    st.image(url_affiche, use_container_width=True)
+    st.markdown("""
+    ### 🐾 Événement à ne pas manquer !
+    Retrouvez toutes les informations sur notre site internet ou directement au refuge.
+    """)
+    if st.button("Voir nos animaux à l'adoption"):
+        st.rerun()
+
+# --- 4. STYLE CSS ---
+st.markdown(f"""
+    <style>
+    .stApp {{ background-color: transparent !important; }}
+    .logo-overlay {{
+        position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+        width: 70vw; opacity: 0.04; z-index: -1; pointer-events: none;
+    }}
+    [data-testid="stVerticalBlockBorderWrapper"] {{
+        background-color: white !important; border-radius: 15px !important;
+        border: 1px solid #ddd !important; box-shadow: 0px 4px 12px rgba(0,0,0,0.08) !important;
+        padding: 20px !important; margin-bottom: 20px !important;
+    }}
+    h1 {{ color: #FF0000 !important; font-weight: 800; }}
+    .btn-contact {{ 
+        text-decoration: none !important; color: white !important; background-color: #2e7d32; 
+        padding: 12px; border-radius: 8px; display: block; text-align: center; font-weight: bold; margin-top: 10px;
+    }}
+    .btn-reserve {{ 
+        text-decoration: none !important; color: white !important; background-color: #ff8f00; 
+        padding: 12px; border-radius: 8px; display: block; text-align: center; font-weight: bold; margin-top: 10px;
+    }}
+    [data-testid="stImage"] img {{ 
+        border: 8px solid white !important; box-shadow: 0px 4px 10px rgba(0,0,0,0.2) !important;
+        height: 320px; object-fit: cover;
+    }}
+    .footer-container {{
+        background-color: white; padding: 25px; border-radius: 15px; margin-top: 50px;
+        text-align: center; border: 2px solid #FF0000;
+    }}
+    </style>
+    <img src="data:image/png;base64,{logo_b64 if logo_b64 else ''}" class="logo-overlay">
+    """, unsafe_allow_html=True)
+
+# --- 5. LOGIQUE PRINCIPALE ---
 try:
     URL_SHEET = st.secrets["gsheets"]["public_url"]
-    df = load_all_data(URL_SHEET)
+    df, df_config = load_data_from_sheets(URL_SHEET)
 
-    # Lancement de la Pop-up au démarrage (Session State)
-    if "popup_vue" not in st.session_state:
+    # Gestion de l'affiche via Google Sheets
+    url_evenement = None
+    if not df_config.empty and 'Cle' in df_config.columns:
+        ligne = df_config[df_config['Cle'] == 'Lien_Affiche']
+        if not ligne.empty:
+            val_url = ligne.iloc[0]['Valeur']
+            if pd.notna(val_url) and str(val_url).strip() != "":
+                url_evenement = format_image_url(val_url)
+
+    if url_evenement and "popup_vue" not in st.session_state:
         st.session_state.popup_vue = True
-        afficher_evenement()
+        afficher_evenement(url_evenement)
 
     if not df.empty:
         df_dispo = df[df['Statut'] != "Adopté"].copy()
-
         st.title("🐾 Refuge Médéric")
         st.markdown("#### Association Animaux du Grand Dax")
 
@@ -144,7 +129,7 @@ try:
             st.cache_data.clear()
             st.rerun()
 
-        st.info("🛡️ **Engagement Santé :** Tous nos protégés sont **vaccinés** et **identifiés** (puce électronique) avant leur départ du refuge pour une adoption responsable.")
+        st.info("🛡️ **Engagement Santé :** Tous nos protégés sont **vaccinés** et **identifiés**.")
         
         df_filtre = df_dispo.copy()
         if choix_espece != "Tous": df_filtre = df_filtre[df_filtre['Espèce'] == choix_espece]
@@ -156,8 +141,8 @@ try:
             with st.container(border=True):
                 col_img, col_txt = st.columns([1, 1.2])
                 with col_img:
-                    url_photo = format_image_url(row['Photo'])
-                    st.image(url_photo if url_photo.startswith('http') else "https://via.placeholder.com/300", use_container_width=True)
+                    url_p = format_image_url(row['Photo'])
+                    st.image(url_p if url_p.startswith('http') else "https://via.placeholder.com/300", use_container_width=True)
                 with col_txt:
                     st.subheader(row['Nom'])
                     statut = str(row['Statut']).strip()
@@ -191,5 +176,6 @@ try:
             </div>
         </div>
     """, unsafe_allow_html=True)
+
 except Exception as e:
-    st.error("Erreur de chargement.")
+    st.error(f"Vérifiez l'onglet 'Config' dans votre Google Sheets. (Erreur: {e})")
