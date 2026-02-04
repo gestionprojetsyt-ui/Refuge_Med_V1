@@ -25,17 +25,39 @@ st.set_page_config(
     page_icon=f"data:image/png;base64,{logo_b64}" if logo_b64 else "🐾"
 )
 
-# --- 2. LA POP-UP ---
-@st.dialog("📢 ÉVÉNEMENT AU REFUGE", width="large")
-def afficher_evenement(url_affiche):
-    if url_affiche:
-        if "id=" in url_affiche or "drive.google.com" in url_affiche:
-            doc_id = url_affiche.split('id=')[-1].split('&')[0].split('/')[-1]
-            url_affiche = f"https://drive.google.com/thumbnail?id={doc_id}&sz=w1000"
-        st.markdown(f"""<div style="text-align: center;"><img src="{url_affiche}" style="max-height: 65vh; max-width: 100%; border-radius: 10px; object-fit: contain;"></div>""", unsafe_allow_html=True)
-    st.markdown("### 🐾 Événement à ne pas manquer !")
-    if st.button("Fermer", use_container_width=True):
-        st.rerun()
+# --- LOGIQUE POP-UP POUR PLUSIEURS ÉVÉNEMENTS ---
+    if not df_config.empty:
+        # Nettoyage des noms de colonnes
+        df_config.columns = [str(c).strip() for c in df_config.columns]
+        
+        # On récupère TOUTES les lignes qui contiennent 'Lien_Affiche'
+        lignes_evenements = df_config[df_config.iloc[:, 0].astype(str).str.contains('Lien_Affiche', na=False, case=False)]
+        
+        if not lignes_evenements.empty and "popup_vue" not in st.session_state:
+            st.session_state.popup_vue = True
+            
+            # On crée une liste de tous les liens valides trouvés
+            liens_affiches = []
+            for _, row in lignes_evenements.iterrows():
+                url_brut = str(row.iloc[1])
+                if url_brut and url_brut != "nan":
+                    liens_affiches.append(format_image_url(url_brut))
+            
+            # On envoie la liste complète à la fonction de dialogue
+            if liens_affiches:
+                @st.dialog("📢 ÉVÉNEMENTS AU REFUGE", width="large")
+                def afficher_tous_les_evenements(liste_urls):
+                    for url in liste_urls:
+                        st.markdown(f"""
+                            <div style="text-align: center; margin-bottom: 20px;">
+                                <img src="{url}" style="max-height: 65vh; max-width: 100%; border-radius: 10px; object-fit: contain;">
+                            </div>
+                        """, unsafe_allow_html=True)
+                    st.markdown("### 🐾 Événements à ne pas manquer !")
+                    if st.button("Fermer", use_container_width=True):
+                        st.rerun()
+                
+                afficher_tous_les_evenements(liens_affiches)
 
 # --- 3. STYLE VISUEL ---
 st.markdown(f"""
