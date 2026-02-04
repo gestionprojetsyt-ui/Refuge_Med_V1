@@ -19,7 +19,6 @@ def get_base64_image(url):
 
 logo_b64 = get_base64_image(URL_LOGO_HD)
 
-# On utilise l'image encodée pour l'onglet
 st.set_page_config(
     page_title="Refuge Médéric - Association Animaux du Grand Dax", 
     layout="centered", 
@@ -27,59 +26,31 @@ st.set_page_config(
 )
 
 # --- 2. RÉCUPÉRATION DU LOGO POUR LE FOND ---
-@st.cache_data
-def get_base64_image(url):
-    try:
-        response = requests.get(url, headers={"User-Agent": "Mozilla/5.0"}, timeout=10)
-        if response.status_code == 200:
-            return base64.b64encode(response.content).decode()
-    except:
-        return None
-    return None
-
-logo_b64 = get_base64_image(URL_LOGO_HD)
+# (Note : La fonction est déjà définie plus haut, on réutilise logo_b64)
 
 # --- 3. DIALOGUE POP-UP ---
-@st.dialog("📢 ÉVÉNEMENT AU REFUGE")
+@st.dialog("📢 ÉVÉNEMENT AU REFUGE", width="large")
 def afficher_evenement(url_affiche):
     if url_affiche:
         st.image(url_affiche, use_container_width=True)
     st.markdown("### 🐾 Événement à ne pas manquer !")
     st.write("Plus d'informations sur notre site ou directement au refuge.")
-    if st.button("Fermer"):
+    if st.button("Fermer et voir les animaux", use_container_width=True):
         st.rerun()
 
 # --- 4. STYLE VISUEL (COUCHES SUPERPOSÉES) ---
 st.markdown(f"""
     <style>
-    /* 1. ON REND LE FOND NATIF DE L'APPLI TRANSPARENT POUR VOIR LE LOGO */
-    .stApp {{
-        background-color: transparent !important;
-    }}
-
-    /* 2. ON PLACE LE LOGO SUR UNE COUCHE FIXE DERRIÈRE LES ÉLÉMENTS */
+    .stApp {{ background-color: transparent !important; }}
     .logo-overlay {{
-        position: fixed;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        width: 70vw;
-        opacity: 0.04; /* Ajusté à 4% pour être visible mais discret */
-        z-index: -1; /* Au-dessus du fond, mais sous le texte/fiches */
-        pointer-events: none;
+        position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
+        width: 70vw; opacity: 0.04; z-index: -1; pointer-events: none;
     }}
-
-    /* 3. STYLE DES FICHES BLANCHES (POUR BIEN SE DÉTACHER) */
     [data-testid="stVerticalBlockBorderWrapper"] {{
-        background-color: white !important;
-        border-radius: 15px !important;
-        border: 1px solid #ddd !important;
-        box-shadow: 0px 4px 12px rgba(0,0,0,0.08) !important;
-        padding: 20px !important;
-        margin-bottom: 20px !important;
+        background-color: white !important; border-radius: 15px !important;
+        border: 1px solid #ddd !important; box-shadow: 0px 4px 12px rgba(0,0,0,0.08) !important;
+        padding: 20px !important; margin-bottom: 20px !important;
     }}
-
-    /* BOUTONS ET TITRES */
     h1 {{ color: #FF0000 !important; font-weight: 800; }}
     .btn-contact {{ 
         text-decoration: none !important; color: white !important; background-color: #2e7d32; 
@@ -89,24 +60,16 @@ st.markdown(f"""
         text-decoration: none !important; color: white !important; background-color: #ff8f00; 
         padding: 12px; border-radius: 8px; display: block; text-align: center; font-weight: bold; margin-top: 10px;
     }}
-
     [data-testid="stImage"] img {{ 
         border: 8px solid white !important; 
         box-shadow: 0px 4px 10px rgba(0,0,0,0.2) !important;
-        height: 320px;
-        object-fit: cover;
+        height: 320px; object-fit: cover;
     }}
-
     .footer-container {{
-        background-color: white;
-        padding: 25px;
-        border-radius: 15px;
-        margin-top: 50px;
-        text-align: center;
-        border: 2px solid #FF0000;
+        background-color: white; padding: 25px; border-radius: 15px; margin-top: 50px;
+        text-align: center; border: 2px solid #FF0000;
     }}
     </style>
-    
     <img src="data:image/png;base64,{logo_b64 if logo_b64 else ''}" class="logo-overlay">
     """, unsafe_allow_html=True)
 
@@ -114,8 +77,18 @@ st.markdown(f"""
 @st.cache_data(ttl=60)
 def load_all_data(url):
     try:
-        csv_url = url.replace('/edit?usp=sharing', '/export?format=csv').replace('/edit#gid=', '/export?format=csv&gid=')
-        df = pd.read_csv(csv_url, engine='c', low_memory=False)
+        base_url = url.split('/edit')[0]
+        # Chargement onglet animaux
+        df = pd.read_csv(f"{base_url}/export?format=csv", engine='c', low_memory=False)
+        
+        # Chargement onglet Config pour la pop-up
+        df_config = pd.DataFrame()
+        try:
+            config_url = f"{base_url}/gviz/tq?tqx=out:csv&sheet=Config"
+            df_config = pd.read_csv(config_url)
+        except:
+            pass
+
         def categoriser_age(age):
             try:
                 age = float(str(age).replace(',', '.'))
@@ -124,21 +97,37 @@ def load_all_data(url):
                 elif 5 < age < 10: return "5 à 10 ans (Adulte)"
                 else: return "10 ans et plus (Senior)"
             except: return "Non précisé"
+        
         df['Tranche_Age'] = df['Âge'].apply(categoriser_age)
-        return df
-    except: return pd.DataFrame()
+        return df, df_config
+    except: 
+        return pd.DataFrame(), pd.DataFrame()
 
 def format_image_url(url):
     url = str(url).strip()
     if "drive.google.com" in url:
-        match = re.search(r"/d/([^/]+)", url)
-        if match: return f"https://drive.google.com/uc?export=view&id={match.group(1)}"
+        match = re.search(r"/d/([^/]+)|id=([^&]+)", url)
+        if match:
+            doc_id = match.group(1) or match.group(2)
+            return f"https://drive.google.com/uc?export=view&id={doc_id}"
     return url
 
 # --- 5. INTERFACE ---
 try:
     URL_SHEET = st.secrets["gsheets"]["public_url"]
-    df = load_all_data(URL_SHEET)
+    df, df_config = load_all_data(URL_SHEET)
+
+    # --- LOGIQUE DE LA POP-UP ---
+    if not df_config.empty:
+        df_config.columns = [str(c).strip() for c in df_config.columns]
+        # On cherche la ligne "Lien_Affiche"
+        row_ev = df_config[df_config.iloc[:, 0].astype(str).str.contains('Lien_Affiche', na=False, case=False)]
+        if not row_ev.empty:
+            raw_url = str(row_ev.iloc[0, 1])
+            url_affiche = format_image_url(raw_url)
+            if url_affiche and "popup_vue" not in st.session_state:
+                st.session_state.popup_vue = True
+                afficher_evenement(url_affiche)
 
     if not df.empty:
         df_dispo = df[df['Statut'] != "Adopté"].copy()
@@ -199,8 +188,9 @@ try:
             <div style="font-size:0.85em; color:#666; margin-top:15px; padding-top:15px; border-top:1px solid #ddd;">
                 © 2026 - Application officielle du Refuge Médéric<br>
                 🌐 <a href="https://refugedax40.wordpress.com/" target="_blank">Visiter notre site internet</a><br>
-            Développé par Firnaeth. avec passion pour nos amis à quatre pattes.
+                Développé par Firnaeth. avec passion pour nos amis à quatre pattes.
+            </div>
         </div>
     """, unsafe_allow_html=True)
 except Exception as e:
-    st.error("Erreur de chargement.")
+    st.error(f"Erreur de chargement : {e}")
