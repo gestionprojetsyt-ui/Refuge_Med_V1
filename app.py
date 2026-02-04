@@ -29,13 +29,13 @@ st.set_page_config(
 # (Note : La fonction est déjà définie plus haut, on réutilise logo_b64)
 
 # --- 3. DIALOGUE POP-UP ---
-@st.dialog("📢 ÉVÉNEMENT AU REFUGE", width="large")
+@st.dialog("📢 ÉVÉNEMENT AU REFUGE")
 def afficher_evenement(url_affiche):
     if url_affiche:
         st.image(url_affiche, use_container_width=True)
     st.markdown("### 🐾 Événement à ne pas manquer !")
     st.write("Plus d'informations sur notre site ou directement au refuge.")
-    if st.button("Fermer et voir les animaux", use_container_width=True):
+    if st.button("Fermer"):
         st.rerun()
 
 # --- 4. STYLE VISUEL (COUCHES SUPERPOSÉES) ---
