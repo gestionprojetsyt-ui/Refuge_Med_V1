@@ -31,7 +31,6 @@ def format_image_url(url):
     if not isinstance(url, str): return ""
     url = url.strip()
     if "drive.google.com" in url:
-        # Extrait l'ID pour un affichage direct propre
         match = re.search(r"/d/([^/]+)|id=([^&]+)", url)
         if match:
             doc_id = match.group(1) or match.group(2)
@@ -42,25 +41,23 @@ def format_image_url(url):
 def load_data_from_sheets(base_url):
     try:
         clean_url = base_url.split('/edit')[0]
-        # Chargement des deux onglets
+        # Onglet principal (Animaux)
         df_animaux = pd.read_csv(f"{clean_url}/export?format=csv")
+        # Onglet Config
         config_url = f"{clean_url}/gviz/tq?tqx=out:csv&sheet=Config"
         df_config = pd.read_csv(config_url)
         return df_animaux, df_config
     except:
-        # Retourne des DataFrames vides en cas de souci
         return pd.DataFrame(), pd.DataFrame()
 
 # --- 3. DIALOGUE POP-UP ÉVÉNEMENT ---
 @st.dialog("📢 ÉVÉNEMENT AU REFUGE")
 def afficher_evenement(url_affiche):
-    if url_affiche:
+    if url_affiche and url_affiche.startswith('http'):
         st.image(url_affiche, use_container_width=True)
-    st.markdown("""
-    ### 🐾 Événement à ne pas manquer !
-    Retrouvez toutes les informations sur notre site internet ou directement au refuge.
-    """)
-    if st.button("Découvrir nos protégés"):
+    st.markdown("### 🐾 Événement à ne pas manquer !")
+    st.write("Plus d'informations sur notre site ou directement au refuge.")
+    if st.button("Fermer"):
         st.rerun()
 
 # --- 4. STYLE VISUEL CSS ---
@@ -98,33 +95,34 @@ try:
     URL_SHEET = st.secrets["gsheets"]["public_url"]
     df, df_config = load_data_from_sheets(URL_SHEET)
 
-    # Gestion de la Pop-up via l'onglet Config
-    url_evenement = None
+    # 1. Gestion de la Pop-up
+    url_affiche_trouvee = None
     if not df_config.empty:
         df_config.columns = df_config.columns.str.strip()
         row_affiche = df_config[df_config['Cle'].astype(str).str.contains('Lien_Affiche', na=False)]
         if not row_affiche.empty:
-            val_url = str(row_affiche.iloc[0]['Valeur']).strip()
-            if val_url.startswith('http'):
-                url_evenement = format_image_url(val_url)
+            valeur = str(row_affiche.iloc[0]['Valeur']).strip()
+            if valeur.startswith('http'):
+                url_affiche_trouvee = format_image_url(valeur)
 
-    if url_evenement and "popup_vue" not in st.session_state:
+    if url_affiche_trouvee and "popup_vue" not in st.session_state:
         st.session_state.popup_vue = True
-        afficher_evenement(url_evenement)
+        afficher_evenement(url_affiche_trouvee)
 
-    # Affichage du catalogue
+    # 2. Catalogue des Animaux
     if not df.empty:
         st.title("🐾 Refuge Médéric")
         st.markdown("#### Association Animaux du Grand Dax")
 
         df_dispo = df[df['Statut'] != "Adopté"].copy()
         
+        # Filtres
         c1, c2 = st.columns(2)
         with c1:
             especes = ["Tous"] + sorted(df_dispo['Espèce'].dropna().unique().tolist())
-            choix_espece = st.selectbox("🐶 Espèce", especes)
+            choix_espece = st.selectbox("🐶 Choisir une espèce", especes)
         with c2:
-            st.write("") # Alignement
+            st.write("") 
             if st.button("🔄 Actualiser"):
                 st.cache_data.clear()
                 st.rerun()
@@ -137,27 +135,31 @@ try:
             with st.container(border=True):
                 col1, col2 = st.columns([1, 1.2])
                 with col1:
-                    u = format_image_url(row['Photo'])
-                    st.image(u if u.startswith('http') else "https://via.placeholder.com/300", use_container_width=True)
+                    u_photo = format_image_url(row['Photo'])
+                    st.image(u_photo if u_photo.startswith('http') else "https://via.placeholder.com/300", use_container_width=True)
                 with col2:
                     st.subheader(row['Nom'])
                     st.info(f"🏠 {row['Statut']}")
-                    st.write(f"**{row['Espèce']}** | {row['Sexe']} | {row['Âge']} ans")
+                    st.write(f"**{row['Espèce']}** | {row['Sexe']} | **{row['Âge']} ans**")
                     
-                    with st.expander("En savoir plus"):
-                        st.write(f"**Histoire :** {row['Histoire']}")
-                        st.write(f"**Description :** {row['Description']}")
-                    
-                    st.markdown(f'<a href="tel:0558736882" class="btn-contact">📞 Appeler le refuge</a>', unsafe_allow_html=True)
+                    # --- Retour des 3 Onglets ---
+                    t1, t2, t3 = st.tabs(["📖 Histoire", "📋 Caractère", "📞 Contact"])
+                    with t1:
+                        st.write(row['Histoire'])
+                    with t2:
+                        st.write(row['Description'])
+                    with t3:
+                        st.markdown(f'<a href="tel:0558736882" class="btn-contact">📞 Appeler le refuge</a>', unsafe_allow_html=True)
+                        st.markdown(f'<a href="mailto:animauxdugranddax@gmail.com?subject=Adoption de {row["Nom"]}" class="btn-contact">📩 Envoyer un Mail</a>', unsafe_allow_html=True)
 
     # Footer
-    st.markdown("""
+    st.markdown(f"""
         <div class="footer-container">
             <b style="color:#FF0000;">Refuge Médéric - Association Animaux du Grand Dax</b><br>
-            🌐 <a href="https://refugedax40.wordpress.com/" target="_blank">Site internet</a><br>
+            🌐 <a href="https://refugedax40.wordpress.com/" target="_blank">Visiter notre site internet</a><br>
             Développé par <b>Firnaeth.</b>
         </div>
     """, unsafe_allow_html=True)
 
 except Exception as e:
-    st.error("Connexion au catalogue impossible pour le moment.")
+    st.error(f"Erreur : {e}")
