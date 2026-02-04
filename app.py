@@ -205,7 +205,7 @@ try:
                         st.markdown(f'<a href="tel:0558736882" class="btn-contact">📞 Appeler le refuge</a>', unsafe_allow_html=True)
                         st.markdown(f'<a href="mailto:animauxdugranddax@gmail.com?subject=Adoption de {row["Nom"]}" class="btn-contact">📩 Envoyer un Mail</a>', unsafe_allow_html=True)
 
-    # --- 6. PIED DE PAGE ---
+# --- 6. PIED DE PAGE ---
     st.markdown("""
         <div class="footer-container">
             <div style="color:#222; font-size:0.95em;">
@@ -217,9 +217,10 @@ try:
                 © 2026 - Application officielle du Refuge Médéric<br>
                 🌐 <a href="https://refugedax40.wordpress.com/" target="_blank">Visiter notre site internet</a><br>
                 Développé par Firnaeth. avec passion pour nos amis à quatre pattes.
+                <div class="version-note">Version 2.5 - Correctif Pop-up & Note de version</div>
             </div>
         </div>
     """, unsafe_allow_html=True)
 except Exception as e:
-    st.error("Erreur de chargement.")
+    st.error(f"Erreur de chargement : {e}")
 
