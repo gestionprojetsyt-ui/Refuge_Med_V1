@@ -29,13 +29,13 @@ st.set_page_config(
 
 def format_image_url(url):
     url = str(url).strip()
-    # Si c'est un lien de partage Drive classique
     if "drive.google.com" in url:
-        # Cette regex va chercher l'ID entre /d/ et /view
-        match = re.search(r"/d/([^/]+)", url)
+        # On essaie d'extraire l'ID du fichier
+        match = re.search(r"/d/([^/]+)|id=([^&]+)", url)
         if match:
-            doc_id = match.group(1)
-            return f"https://drive.google.com/uc?export=view&id={doc_id}"
+            doc_id = match.group(1) or match.group(2)
+            # On utilise le lien de téléchargement direct qui fonctionne mieux avec Streamlit
+            return f"https://drive.google.com/uc?export=download&id={doc_id}"
     return url
 
 @st.cache_data(ttl=60)
