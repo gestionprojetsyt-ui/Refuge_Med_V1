@@ -25,14 +25,26 @@ st.set_page_config(
     page_icon=f"data:image/png;base64,{logo_b64}" if logo_b64 else "🐾"
 )
 
-# --- 3. DIALOGUE POP-UP (CONFIGURÉ EN LARGE) ---
+# --- 3. DIALOGUE POP-UP (IMAGE ENTIÈRE & THUMBNAIL) ---
 @st.dialog("📢 ÉVÉNEMENT AU REFUGE", width="large")
 def afficher_evenement(url_affiche):
     if url_affiche:
-        st.image(url_affiche, use_container_width=True)
+        # On remplace le format standard par le format thumbnail haute qualité (1200px)
+        if "id=" in url_affiche or "drive.google.com" in url_affiche:
+            # Extraction propre de l'ID pour forcer le thumbnail
+            doc_id = url_affiche.split('id=')[-1].split('&')[0].split('/')[-1]
+            url_affiche = f"https://drive.google.com/thumbnail?id={doc_id}&sz=w1200"
+        
+        # Affichage HTML pour éviter que le CSS du catalogue ne coupe l'image
+        st.markdown(f"""
+            <div style="text-align: center;">
+                <img src="{url_affiche}" style="max-width: 100%; height: auto; border-radius: 10px; box-shadow: 0px 4px 15px rgba(0,0,0,0.15);">
+            </div>
+        """, unsafe_allow_html=True)
+        
+    st.markdown("---")
     st.markdown("### 🐾 Événement à ne pas manquer !")
-    st.write("Plus d'informations sur notre site ou directement au refuge.")
-    if st.button("Fermer", use_container_width=True):
+    if st.button("Voir les animaux du refuge", use_container_width=True):
         st.rerun()
 
 # --- 4. STYLE VISUEL CSS ---
