@@ -25,38 +25,27 @@ st.set_page_config(
     page_icon=f"data:image/png;base64,{logo_b64}" if logo_b64 else "🐾"
 )
 
-# --- 2. FONCTIONS DE CHARGEMENT ET FORMATAGE ---
-
+# --- 2. FONCTION DE FORMATAGE DRIVE ---
 def format_image_url(url):
-    if not isinstance(url, str): return ""
+    if not isinstance(url, str) or url == "0" or url == "": return None
     url = url.strip()
     if "drive.google.com" in url:
         match = re.search(r"/d/([^/]+)|id=([^&]+)", url)
         if match:
             doc_id = match.group(1) or match.group(2)
+            # Lien direct pour l'affichage
             return f"https://drive.google.com/uc?export=view&id={doc_id}"
-    return url
+    return url if url.startswith("http") else None
 
 @st.cache_data(ttl=60)
 def load_data_from_sheets(base_url):
     try:
         clean_url = base_url.split('/edit')[0]
-        # Onglet principal (Animaux)
+        # Onglet Animaux
         df_animaux = pd.read_csv(f"{clean_url}/export?format=csv")
-        
-        # Tentative de lecture de l'onglet Config de manière ultra-souple
-        df_config = pd.DataFrame()
-        try:
-            # On essaie de forcer la lecture de l'onglet nommé 'Config'
-            config_url = f"{clean_url}/gviz/tq?tqx=out:csv&sheet=Config"
-            df_config = pd.read_csv(config_url)
-        except:
-            # Si ça rate, on essaie l'onglet n°2 (souvent le cas pour Config)
-            try:
-                config_url_2 = f"{clean_url}/gviz/tq?tqx=out:csv&gid=1" 
-                df_config = pd.read_csv(config_url_2)
-            except:
-                pass
+        # Onglet Config
+        config_url = f"{clean_url}/gviz/tq?tqx=out:csv&sheet=Config"
+        df_config = pd.read_csv(config_url)
         return df_animaux, df_config
     except:
         return pd.DataFrame(), pd.DataFrame()
@@ -64,8 +53,11 @@ def load_data_from_sheets(base_url):
 # --- 3. DIALOGUE POP-UP ---
 @st.dialog("📢 ÉVÉNEMENT AU REFUGE")
 def afficher_evenement(url_affiche):
-    if url_affiche and url_affiche.startswith('http'):
+    if url_affiche:
         st.image(url_affiche, use_container_width=True)
+    else:
+        st.warning("L'affiche arrive bientôt !")
+    
     st.markdown("### 🐾 Événement à ne pas manquer !")
     st.write("Plus d'informations sur notre site ou directement au refuge.")
     if st.button("Fermer"):
@@ -89,10 +81,6 @@ st.markdown(f"""
         text-decoration: none !important; color: white !important; background-color: #2e7d32; 
         padding: 12px; border-radius: 8px; display: block; text-align: center; font-weight: bold; margin-top: 10px;
     }}
-    [data-testid="stImage"] img {{ 
-        border: 8px solid white !important; box-shadow: 0px 4px 10px rgba(0,0,0,0.2) !important;
-        height: 320px; object-fit: cover;
-    }}
     .footer-container {{
         background-color: white; padding: 25px; border-radius: 15px; margin-top: 50px;
         text-align: center; border: 2px solid #FF0000;
@@ -106,30 +94,21 @@ try:
     URL_SHEET = st.secrets["gsheets"]["public_url"]
     df, df_config = load_data_from_sheets(URL_SHEET)
 
-    # RECHERCHE DE L'AFFICHE DANS LA CONFIG
-    url_affiche_trouvee = None
+    # RECHERCHE DE L'AFFICHE
+    url_affiche_propre = None
     if not df_config.empty:
-        # On nettoie les noms de colonnes
-        df_config.columns = [str(c).strip() for c in df_config.columns]
-        
-        # On cherche dans toutes les colonnes la valeur "Lien_Affiche"
-        for col in df_config.columns:
-            matches = df_config[df_config[col].astype(str).str.contains('Lien_Affiche', na=False)]
-            if not matches.empty:
-                # Si on trouve "Lien_Affiche", on prend la valeur juste à côté (colonne Valeur)
-                try:
-                    valeur_potentielle = matches.iloc[0]['Valeur']
-                    if pd.notna(valeur_potentielle) and "http" in str(valeur_potentielle):
-                        url_affiche_trouvee = format_image_url(str(valeur_potentielle))
-                except:
-                    pass
+        # On cherche la ligne Lien_Affiche
+        row = df_config[df_config['Cle'].astype(str).str.contains('Lien_Affiche', na=False)]
+        if not row.empty:
+            raw_url = str(row.iloc[0]['Valeur'])
+            url_affiche_propre = format_image_url(raw_url)
 
-    # Déclenchement de la pop-up
-    if url_affiche_trouvee and "popup_vue" not in st.session_state:
+    # Affichage Pop-up (une seule fois par session)
+    if url_affiche_propre and "popup_vue" not in st.session_state:
         st.session_state.popup_vue = True
-        afficher_evenement(url_affiche_trouvee)
+        afficher_evenement(url_affiche_propre)
 
-    # Affichage du catalogue (avec tes 3 onglets)
+    # Catalogue des animaux
     if not df.empty:
         st.title("🐾 Refuge Médéric")
         st.markdown("#### Association Animaux du Grand Dax")
@@ -146,7 +125,7 @@ try:
                 c1, c2 = st.columns([1, 1.2])
                 with c1:
                     u_photo = format_image_url(row['Photo'])
-                    st.image(u_photo if u_photo.startswith('http') else "https://via.placeholder.com/300", use_container_width=True)
+                    st.image(u_photo if u_photo else "https://via.placeholder.com/300", use_container_width=True)
                 with c2:
                     st.subheader(row['Nom'])
                     st.info(f"🏠 {row['Statut']}")
