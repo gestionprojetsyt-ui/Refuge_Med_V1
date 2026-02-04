@@ -117,19 +117,15 @@ try:
     URL_SHEET = st.secrets["gsheets"]["public_url"]
     df, df_config = load_all_data(URL_SHEET)
 
-# RECHERCHE DE L'AFFICHE
-    url_affiche_propre = None
+# Gestion de la Pop-up
     if not df_config.empty:
         df_config.columns = df_config.columns.str.strip()
-        row = df_config[df_config['Cle'].astype(str).str.contains('Lien_Affiche', na=False)]
-        if not row.empty:
-            raw_url = str(row.iloc[0]['Valeur'])
-            url_affiche_propre = format_image_url(raw_url)
-
-    # Affichage Pop-up
-    if url_affiche_propre and "popup_vue" not in st.session_state:
-        st.session_state.popup_vue = True
-        afficher_evenement(url_affiche_propre)
+        row_config = df_config[df_config['Cle'].astype(str).str.contains('Lien_Affiche', na=False)]
+        if not row_config.empty:
+            url_ev = format_image_url(str(row_config.iloc[0]['Valeur']))
+            if url_ev and "popup_vue" not in st.session_state:
+                st.session_state.popup_vue = True
+                afficher_evenement(url_ev)
 
     if not df.empty:
         df_dispo = df[df['Statut'] != "Adopté"].copy()
