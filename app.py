@@ -25,20 +25,17 @@ st.set_page_config(
     page_icon=f"data:image/png;base64,{logo_b64}" if logo_b64 else "🐾"
 )
 
-# --- 2. RÉCUPÉRATION DU LOGO POUR LE FOND ---
-# (Note : La fonction est déjà définie plus haut, on réutilise logo_b64)
-
-# --- 3. DIALOGUE POP-UP ---
-@st.dialog("📢 ÉVÉNEMENT AU REFUGE")
+# --- 3. DIALOGUE POP-UP (CONFIGURÉ EN LARGE) ---
+@st.dialog("📢 ÉVÉNEMENT AU REFUGE", width="large")
 def afficher_evenement(url_affiche):
     if url_affiche:
         st.image(url_affiche, use_container_width=True)
     st.markdown("### 🐾 Événement à ne pas manquer !")
     st.write("Plus d'informations sur notre site ou directement au refuge.")
-    if st.button("Fermer"):
+    if st.button("Fermer", use_container_width=True):
         st.rerun()
 
-# --- 4. STYLE VISUEL (COUCHES SUPERPOSÉES) ---
+# --- 4. STYLE VISUEL CSS ---
 st.markdown(f"""
     <style>
     .stApp {{ background-color: transparent !important; }}
@@ -69,6 +66,7 @@ st.markdown(f"""
         background-color: white; padding: 25px; border-radius: 15px; margin-top: 50px;
         text-align: center; border: 2px solid #FF0000;
     }}
+    .version-note {{ font-size: 0.75em; color: #999; margin-top: 10px; font-style: italic; }}
     </style>
     <img src="data:image/png;base64,{logo_b64 if logo_b64 else ''}" class="logo-overlay">
     """, unsafe_allow_html=True)
@@ -78,10 +76,8 @@ st.markdown(f"""
 def load_all_data(url):
     try:
         base_url = url.split('/edit')[0]
-        # Chargement onglet animaux
         df = pd.read_csv(f"{base_url}/export?format=csv", engine='c', low_memory=False)
         
-        # Chargement onglet Config pour la pop-up
         df_config = pd.DataFrame()
         try:
             config_url = f"{base_url}/gviz/tq?tqx=out:csv&sheet=Config"
@@ -117,13 +113,17 @@ try:
     URL_SHEET = st.secrets["gsheets"]["public_url"]
     df, df_config = load_all_data(URL_SHEET)
 
-# Gestion de la Pop-up
+    # --- LOGIQUE POP-UP CORRIGÉE ---
     if not df_config.empty:
-        df_config.columns = df_config.columns.str.strip()
-        row_config = df_config[df_config['Cle'].astype(str).str.contains('Lien_Affiche', na=False)]
+        # Nettoyage des colonnes pour éviter les erreurs d'espaces
+        df_config.columns = [str(c).strip() for c in df_config.columns]
+        # Recherche flexible de la ligne 'Lien_Affiche'
+        row_config = df_config[df_config.iloc[:, 0].astype(str).str.contains('Lien_Affiche', na=False, case=False)]
+        
         if not row_config.empty:
-            url_ev = format_image_url(str(row_config.iloc[0]['Valeur']))
-            if url_ev and "popup_vue" not in st.session_state:
+            raw_url = str(row_config.iloc[0, 1])
+            url_ev = format_image_url(raw_url)
+            if url_ev and url_ev != "nan" and "popup_vue" not in st.session_state:
                 st.session_state.popup_vue = True
                 afficher_evenement(url_ev)
 
@@ -187,6 +187,7 @@ try:
                 © 2026 - Application officielle du Refuge Médéric<br>
                 🌐 <a href="https://refugedax40.wordpress.com/" target="_blank">Visiter notre site internet</a><br>
                 Développé par Firnaeth. avec passion pour nos amis à quatre pattes.
+                <div class="version-note">Version 2.5 - Correctif Pop-up & Note de version</div>
             </div>
         </div>
     """, unsafe_allow_html=True)
