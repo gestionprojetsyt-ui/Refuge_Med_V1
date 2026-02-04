@@ -102,11 +102,13 @@ def load_all_data(url):
 def format_image_url(url):
     url = str(url).strip()
     if "drive.google.com" in url:
+        # On extrait l'ID du fichier, peu importe le format du lien Drive
         match = re.search(r"/d/([^/]+)|id=([^&]+)", url)
         if match:
             doc_id = match.group(1) or match.group(2)
-            return f"https://drive.google.com/uc?export=view&id={doc_id}"
-    return url
+            # Utilisation du mode thumbnail pour plus de rapidité et de fluidité
+            return f"https://drive.google.com/thumbnail?id={doc_id}&sz=w1200"
+    return url if url.startswith('http') else None
 
 # --- 5. INTERFACE ---
 try:
