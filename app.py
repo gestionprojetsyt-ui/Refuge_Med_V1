@@ -61,6 +61,7 @@ def load_all_data(base_url):
 @st.dialog("📢 ÉVÉNEMENT AU REFUGE", width="large")
 def afficher_evenement(url_affiche):
     if url_affiche:
+        # Affichage sans bordure pour un effet "affiche"
         st.image(url_affiche, use_container_width=True)
     st.markdown("---")
     st.markdown("### 🐾 Événement à ne pas manquer !")
