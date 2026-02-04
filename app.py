@@ -43,14 +43,25 @@ def load_data_from_sheets(base_url):
         clean_url = base_url.split('/edit')[0]
         # Onglet principal (Animaux)
         df_animaux = pd.read_csv(f"{clean_url}/export?format=csv")
-        # Onglet Config
-        config_url = f"{clean_url}/gviz/tq?tqx=out:csv&sheet=Config"
-        df_config = pd.read_csv(config_url)
+        
+        # Tentative de lecture de l'onglet Config de manière ultra-souple
+        df_config = pd.DataFrame()
+        try:
+            # On essaie de forcer la lecture de l'onglet nommé 'Config'
+            config_url = f"{clean_url}/gviz/tq?tqx=out:csv&sheet=Config"
+            df_config = pd.read_csv(config_url)
+        except:
+            # Si ça rate, on essaie l'onglet n°2 (souvent le cas pour Config)
+            try:
+                config_url_2 = f"{clean_url}/gviz/tq?tqx=out:csv&gid=1" 
+                df_config = pd.read_csv(config_url_2)
+            except:
+                pass
         return df_animaux, df_config
     except:
         return pd.DataFrame(), pd.DataFrame()
 
-# --- 3. DIALOGUE POP-UP ÉVÉNEMENT ---
+# --- 3. DIALOGUE POP-UP ---
 @st.dialog("📢 ÉVÉNEMENT AU REFUGE")
 def afficher_evenement(url_affiche):
     if url_affiche and url_affiche.startswith('http'):
@@ -95,71 +106,60 @@ try:
     URL_SHEET = st.secrets["gsheets"]["public_url"]
     df, df_config = load_data_from_sheets(URL_SHEET)
 
-    # 1. Gestion de la Pop-up
+    # RECHERCHE DE L'AFFICHE DANS LA CONFIG
     url_affiche_trouvee = None
     if not df_config.empty:
-        df_config.columns = df_config.columns.str.strip()
-        row_affiche = df_config[df_config['Cle'].astype(str).str.contains('Lien_Affiche', na=False)]
-        if not row_affiche.empty:
-            valeur = str(row_affiche.iloc[0]['Valeur']).strip()
-            if valeur.startswith('http'):
-                url_affiche_trouvee = format_image_url(valeur)
+        # On nettoie les noms de colonnes
+        df_config.columns = [str(c).strip() for c in df_config.columns]
+        
+        # On cherche dans toutes les colonnes la valeur "Lien_Affiche"
+        for col in df_config.columns:
+            matches = df_config[df_config[col].astype(str).str.contains('Lien_Affiche', na=False)]
+            if not matches.empty:
+                # Si on trouve "Lien_Affiche", on prend la valeur juste à côté (colonne Valeur)
+                try:
+                    valeur_potentielle = matches.iloc[0]['Valeur']
+                    if pd.notna(valeur_potentielle) and "http" in str(valeur_potentielle):
+                        url_affiche_trouvee = format_image_url(str(valeur_potentielle))
+                except:
+                    pass
 
+    # Déclenchement de la pop-up
     if url_affiche_trouvee and "popup_vue" not in st.session_state:
         st.session_state.popup_vue = True
         afficher_evenement(url_affiche_trouvee)
 
-    # 2. Catalogue des Animaux
+    # Affichage du catalogue (avec tes 3 onglets)
     if not df.empty:
         st.title("🐾 Refuge Médéric")
         st.markdown("#### Association Animaux du Grand Dax")
-
-        df_dispo = df[df['Statut'] != "Adopté"].copy()
         
-        # Filtres
-        c1, c2 = st.columns(2)
-        with c1:
-            especes = ["Tous"] + sorted(df_dispo['Espèce'].dropna().unique().tolist())
-            choix_espece = st.selectbox("🐶 Choisir une espèce", especes)
-        with c2:
-            st.write("") 
-            if st.button("🔄 Actualiser"):
-                st.cache_data.clear()
-                st.rerun()
-
+        df_dispo = df[df['Statut'] != "Adopté"].copy()
+        choix_espece = st.selectbox("🐶 Choisir une espèce", ["Tous"] + sorted(df_dispo['Espèce'].dropna().unique().tolist()))
+        
         df_filtre = df_dispo.copy()
         if choix_espece != "Tous":
             df_filtre = df_filtre[df_filtre['Espèce'] == choix_espece]
 
         for _, row in df_filtre.iterrows():
             with st.container(border=True):
-                col1, col2 = st.columns([1, 1.2])
-                with col1:
+                c1, c2 = st.columns([1, 1.2])
+                with c1:
                     u_photo = format_image_url(row['Photo'])
                     st.image(u_photo if u_photo.startswith('http') else "https://via.placeholder.com/300", use_container_width=True)
-                with col2:
+                with c2:
                     st.subheader(row['Nom'])
                     st.info(f"🏠 {row['Statut']}")
                     st.write(f"**{row['Espèce']}** | {row['Sexe']} | **{row['Âge']} ans**")
                     
-                    # --- Retour des 3 Onglets ---
                     t1, t2, t3 = st.tabs(["📖 Histoire", "📋 Caractère", "📞 Contact"])
-                    with t1:
-                        st.write(row['Histoire'])
-                    with t2:
-                        st.write(row['Description'])
+                    with t1: st.write(row['Histoire'])
+                    with t2: st.write(row['Description'])
                     with t3:
                         st.markdown(f'<a href="tel:0558736882" class="btn-contact">📞 Appeler le refuge</a>', unsafe_allow_html=True)
                         st.markdown(f'<a href="mailto:animauxdugranddax@gmail.com?subject=Adoption de {row["Nom"]}" class="btn-contact">📩 Envoyer un Mail</a>', unsafe_allow_html=True)
 
-    # Footer
-    st.markdown(f"""
-        <div class="footer-container">
-            <b style="color:#FF0000;">Refuge Médéric - Association Animaux du Grand Dax</b><br>
-            🌐 <a href="https://refugedax40.wordpress.com/" target="_blank">Visiter notre site internet</a><br>
-            Développé par <b>Firnaeth.</b>
-        </div>
-    """, unsafe_allow_html=True)
+    st.markdown("""<div class="footer-container">© 2026 Refuge Médéric - Association Animaux du Grand Dax</div>""", unsafe_allow_html=True)
 
 except Exception as e:
-    st.error(f"Erreur : {e}")
+    st.error(f"Erreur technique : {e}")
