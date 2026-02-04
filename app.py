@@ -25,7 +25,7 @@ st.set_page_config(
     page_icon=f"data:image/png;base64,{logo_b64}" if logo_b64 else "🐾"
 )
 
-# --- 2. FONCTION DE FORMATAGE DRIVE ---
+# --- 2. FONCTION DE FORMATAGE DRIVE ULTRA-ROBUSTE ---
 def format_image_url(url):
     if not isinstance(url, str) or url == "0" or url == "": return None
     url = url.strip()
@@ -33,8 +33,8 @@ def format_image_url(url):
         match = re.search(r"/d/([^/]+)|id=([^&]+)", url)
         if match:
             doc_id = match.group(1) or match.group(2)
-            # Lien direct pour l'affichage
-            return f"https://drive.google.com/uc?export=view&id={doc_id}"
+            # MÉTHODE ULTIME : Le lien Thumbnail forcé en haute résolution
+            return f"https://drive.google.com/thumbnail?id={doc_id}&sz=w1000"
     return url if url.startswith("http") else None
 
 @st.cache_data(ttl=60)
@@ -55,9 +55,6 @@ def load_data_from_sheets(base_url):
 def afficher_evenement(url_affiche):
     if url_affiche:
         st.image(url_affiche, use_container_width=True)
-    else:
-        st.warning("L'affiche arrive bientôt !")
-    
     st.markdown("### 🐾 Événement à ne pas manquer !")
     st.write("Plus d'informations sur notre site ou directement au refuge.")
     if st.button("Fermer"):
@@ -97,13 +94,13 @@ try:
     # RECHERCHE DE L'AFFICHE
     url_affiche_propre = None
     if not df_config.empty:
-        # On cherche la ligne Lien_Affiche
+        df_config.columns = df_config.columns.str.strip()
         row = df_config[df_config['Cle'].astype(str).str.contains('Lien_Affiche', na=False)]
         if not row.empty:
             raw_url = str(row.iloc[0]['Valeur'])
             url_affiche_propre = format_image_url(raw_url)
 
-    # Affichage Pop-up (une seule fois par session)
+    # Affichage Pop-up
     if url_affiche_propre and "popup_vue" not in st.session_state:
         st.session_state.popup_vue = True
         afficher_evenement(url_affiche_propre)
@@ -131,6 +128,7 @@ try:
                     st.info(f"🏠 {row['Statut']}")
                     st.write(f"**{row['Espèce']}** | {row['Sexe']} | **{row['Âge']} ans**")
                     
+                    # --- LES 3 ONGLETS SONT ICI ---
                     t1, t2, t3 = st.tabs(["📖 Histoire", "📋 Caractère", "📞 Contact"])
                     with t1: st.write(row['Histoire'])
                     with t2: st.write(row['Description'])
