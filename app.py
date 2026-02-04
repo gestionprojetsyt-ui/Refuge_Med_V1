@@ -25,12 +25,11 @@ st.set_page_config(
     page_icon=f"data:image/png;base64,{logo_b64}" if logo_b64 else "🐾"
 )
 
-# --- 2. FONCTIONS DE CHARGEMENT ---
+# --- 2. FONCTIONS DE CHARGEMENT ET FORMATAGE ---
 
 def format_image_url(url):
     url = str(url).strip()
     if "drive.google.com" in url:
-        # Extrait l'ID qu'importe le format du lien Drive
         match = re.search(r"/d/([^/]+)|id=([^&]+)", url)
         if match:
             doc_id = match.group(1) or match.group(2)
@@ -41,17 +40,16 @@ def format_image_url(url):
 def load_data_from_sheets(base_url):
     try:
         clean_url = base_url.split('/edit')[0]
-        # Chargement des animaux (Feuille 1)
+        # Chargement des animaux (Onglet principal)
         df_animaux = pd.read_csv(f"{clean_url}/export?format=csv")
-        
-        # Chargement de la config (Onglet nommé 'Config')
+        # Chargement de la config (Onglet 'Config')
         config_url = f"{clean_url}/gviz/tq?tqx=out:csv&sheet=Config"
         df_config = pd.read_csv(config_url)
         return df_animaux, df_config
-    except:
+    except Exception as e:
         return pd.DataFrame(), pd.DataFrame()
 
-# --- 3. POP-UP ÉVÉNEMENT ---
+# --- 3. DIALOGUE POP-UP ÉVÉNEMENT ---
 @st.dialog("📢 ÉVÉNEMENT AU REFUGE")
 def afficher_evenement(url_affiche):
     st.image(url_affiche, use_container_width=True)
@@ -59,63 +57,80 @@ def afficher_evenement(url_affiche):
     ### 🐾 Événement à ne pas manquer !
     Retrouvez toutes les informations sur notre site internet ou directement au refuge.
     """)
-    if st.button("Voir nos animaux à l'adoption"):
+    if st.button("Voir les animaux à l'adoption"):
         st.rerun()
 
-# --- 4. STYLE CSS ---
+# --- 4. STYLE VISUEL CSS ---
 st.markdown(f"""
     <style>
     .stApp {{ background-color: transparent !important; }}
+    
     .logo-overlay {{
         position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
         width: 70vw; opacity: 0.04; z-index: -1; pointer-events: none;
     }}
+    
     [data-testid="stVerticalBlockBorderWrapper"] {{
         background-color: white !important; border-radius: 15px !important;
         border: 1px solid #ddd !important; box-shadow: 0px 4px 12px rgba(0,0,0,0.08) !important;
         padding: 20px !important; margin-bottom: 20px !important;
     }}
+    
     h1 {{ color: #FF0000 !important; font-weight: 800; }}
+    
     .btn-contact {{ 
         text-decoration: none !important; color: white !important; background-color: #2e7d32; 
         padding: 12px; border-radius: 8px; display: block; text-align: center; font-weight: bold; margin-top: 10px;
     }}
+    
     .btn-reserve {{ 
         text-decoration: none !important; color: white !important; background-color: #ff8f00; 
         padding: 12px; border-radius: 8px; display: block; text-align: center; font-weight: bold; margin-top: 10px;
     }}
+
     [data-testid="stImage"] img {{ 
         border: 8px solid white !important; box-shadow: 0px 4px 10px rgba(0,0,0,0.2) !important;
         height: 320px; object-fit: cover;
     }}
+    
     .footer-container {{
         background-color: white; padding: 25px; border-radius: 15px; margin-top: 50px;
         text-align: center; border: 2px solid #FF0000;
     }}
+    .footer-container a {{ color: #FF0000 !important; font-weight: bold; text-decoration: none; }}
     </style>
+    
     <img src="data:image/png;base64,{logo_b64 if logo_b64 else ''}" class="logo-overlay">
     """, unsafe_allow_html=True)
 
 # --- 5. LOGIQUE PRINCIPALE ---
 try:
+    # Récupération de l'URL secrète
     URL_SHEET = st.secrets["gsheets"]["public_url"]
     df, df_config = load_data_from_sheets(URL_SHEET)
 
-    # Gestion de l'affiche via Google Sheets
+    # 1. Gestion de l'affiche via Google Sheets (onglet Config)
     url_evenement = None
     if not df_config.empty and 'Cle' in df_config.columns:
         ligne = df_config[df_config['Cle'] == 'Lien_Affiche']
         if not ligne.empty:
-            val_url = ligne.iloc[0]['Valeur']
-            if pd.notna(val_url) and str(val_url).strip() != "":
+            val_url = str(ligne.iloc[0]['Valeur']).strip()
+            # On vérifie que c'est bien une URL et non un simple nom de fichier
+            if val_url.startswith('http'):
                 url_evenement = format_image_url(val_url)
 
+    # Affichage de la pop-up si une URL valide est trouvée
     if url_evenement and "popup_vue" not in st.session_state:
         st.session_state.popup_vue = True
-        afficher_evenement(url_evenement)
+        try:
+            afficher_evenement(url_evenement)
+        except:
+            pass # Si l'image bug, on ne bloque pas l'application
 
+    # 2. Affichage du catalogue
     if not df.empty:
         df_dispo = df[df['Statut'] != "Adopté"].copy()
+        
         st.title("🐾 Refuge Médéric")
         st.markdown("#### Association Animaux du Grand Dax")
 
@@ -129,7 +144,19 @@ try:
             st.cache_data.clear()
             st.rerun()
 
-        st.info("🛡️ **Engagement Santé :** Tous nos protégés sont **vaccinés** et **identifiés**.")
+        st.info("🛡️ **Engagement Santé :** Tous nos protégés sont **vaccinés** et **identifiés** (puce électronique) avant leur départ du refuge.")
+        
+        # Application des filtres
+        def categoriser_age(age):
+            try:
+                age = float(str(age).replace(',', '.'))
+                if age < 1: return "Moins d'un an (Junior)"
+                elif 1 <= age <= 5: return "1 à 5 ans (Jeune Adulte)"
+                elif 5 < age < 10: return "5 à 10 ans (Adulte)"
+                else: return "10 ans et plus (Senior)"
+            except: return "Non précisé"
+        
+        df_dispo['Tranche_Age'] = df_dispo['Âge'].apply(categoriser_age)
         
         df_filtre = df_dispo.copy()
         if choix_espece != "Tous": df_filtre = df_filtre[df_filtre['Espèce'] == choix_espece]
@@ -141,8 +168,8 @@ try:
             with st.container(border=True):
                 col_img, col_txt = st.columns([1, 1.2])
                 with col_img:
-                    url_p = format_image_url(row['Photo'])
-                    st.image(url_p if url_p.startswith('http') else "https://via.placeholder.com/300", use_container_width=True)
+                    u_p = format_image_url(row['Photo'])
+                    st.image(u_p if u_p.startswith('http') else "https://via.placeholder.com/300", use_container_width=True)
                 with col_txt:
                     st.subheader(row['Nom'])
                     statut = str(row['Statut']).strip()
@@ -171,11 +198,3 @@ try:
             </div>
             <div style="font-size:0.85em; color:#666; margin-top:15px; padding-top:15px; border-top:1px solid #ddd;">
                 © 2026 - Application officielle du Refuge Médéric<br>
-                🌐 <a href="https://refugedax40.wordpress.com/" target="_blank">Visiter notre site internet</a><br>
-                Développé par Firnaeth. avec passion pour nos amis à quatre pattes.
-            </div>
-        </div>
-    """, unsafe_allow_html=True)
-
-except Exception as e:
-    st.error(f"Vérifiez l'onglet 'Config' dans votre Google Sheets. (Erreur: {e})")
