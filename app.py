@@ -34,7 +34,7 @@ def format_image_url(url):
         match = re.search(r"/d/([^/]+)|id=([^&]+)", url)
         if match:
             doc_id = match.group(1) or match.group(2)
-            # Lien thumbnail haute résolution pour la pop-up
+            # Utilisation du lien thumbnail pour une compatibilité maximale
             return f"https://drive.google.com/thumbnail?id={doc_id}&sz=w1200"
     return url if url.startswith('http') else None
 
@@ -42,25 +42,29 @@ def format_image_url(url):
 def load_all_data(base_url):
     try:
         clean_url = base_url.split('/edit')[0]
+        # Chargement onglet principal
         df_animaux = pd.read_csv(f"{clean_url}/export?format=csv")
+        
+        # Chargement onglet Config (pour la pop-up)
         df_config = pd.DataFrame()
         try:
             config_url = f"{clean_url}/gviz/tq?tqx=out:csv&sheet=Config"
             df_config = pd.read_csv(config_url)
         except:
             pass
+            
         return df_animaux, df_config
     except:
         return pd.DataFrame(), pd.DataFrame()
 
-# --- 3. DIALOGUE POP-UP ---
-@st.dialog("📢 ÉVÉNEMENT AU REFUGE")
+# --- 3. DIALOGUE POP-UP (IMAGE EN GRAND) ---
+@st.dialog("📢 ÉVÉNEMENT AU REFUGE", width="large")
 def afficher_evenement(url_affiche):
     if url_affiche:
         st.image(url_affiche, use_container_width=True)
+    st.markdown("---")
     st.markdown("### 🐾 Événement à ne pas manquer !")
-    st.write("Plus d'informations sur notre site ou directement au refuge.")
-    if st.button("Fermer"):
+    if st.button("Voir les animaux du refuge", use_container_width=True):
         st.rerun()
 
 # --- 4. STYLE VISUEL CSS ---
@@ -85,7 +89,6 @@ st.markdown(f"""
         text-decoration: none !important; color: white !important; background-color: #ff8f00; 
         padding: 12px; border-radius: 8px; display: block; text-align: center; font-weight: bold; margin-top: 10px;
     }}
-    /* Style image catalogue */
     [data-testid="stImage"] img {{ 
         border: 8px solid white !important; box-shadow: 0px 4px 10px rgba(0,0,0,0.2) !important;
         max-height: 550px; width: 100%; object-fit: cover; border-radius: 10px;
@@ -107,39 +110,43 @@ try:
     # Gestion de la Pop-up
     if not df_config.empty:
         df_config.columns = df_config.columns.str.strip()
-        row = df_config[df_config['Cle'].astype(str).str.contains('Lien_Affiche', na=False)]
-        if not row.empty:
-            url_ev = format_image_url(str(row.iloc[0]['Valeur']))
+        row_config = df_config[df_config['Cle'].astype(str).str.contains('Lien_Affiche', na=False)]
+        if not row_config.empty:
+            url_ev = format_image_url(str(row_config.iloc[0]['Valeur']))
             if url_ev and "popup_vue" not in st.session_state:
                 st.session_state.popup_vue = True
                 afficher_evenement(url_ev)
 
     # Affichage Catalogue
     if not df.empty:
+        # Nettoyage et préparation des données
+        def categoriser_age(age):
+            try:
+                age = float(str(age).replace(',', '.'))
+                if age < 1: return "Moins d'un an (Junior)"
+                elif 1 <= age <= 5: return "1 à 5 ans (Jeune Adulte)"
+                elif 5 < age < 10: return "5 à 10 ans (Adulte)"
+                else: return "10 ans et plus (Senior)"
+            except: return "Non précisé"
+        
+        df['Tranche_Age'] = df['Âge'].apply(categoriser_age)
         df_dispo = df[df['Statut'] != "Adopté"].copy()
+
         st.title("🐾 Refuge Médéric")
         st.markdown("#### Association Animaux du Grand Dax")
 
+        # Filtres
         c1, c2 = st.columns(2)
         with c1:
             choix_espece = st.selectbox("🐶 Espèce", ["Tous"] + sorted(df_dispo['Espèce'].dropna().unique().tolist()))
         with c2:
-            def categoriser_age(age):
-                try:
-                    age = float(str(age).replace(',', '.'))
-                    if age < 1: return "Moins d'un an (Junior)"
-                    elif 1 <= age <= 5: return "1 à 5 ans (Jeune Adulte)"
-                    elif 5 < age < 10: return "5 à 10 ans (Adulte)"
-                    else: return "10 ans et plus (Senior)"
-                except: return "Non précisé"
-            df_dispo['Tranche_Age'] = df_dispo['Âge'].apply(categoriser_age)
             choix_age = st.selectbox("🎂 Tranche d'âge", ["Tous", "Moins d'un an (Junior)", "1 à 5 ans (Jeune Adulte)", "5 à 10 ans (Adulte)", "10 ans et plus (Senior)"])
 
         if st.button("🔄 Actualiser le catalogue"):
             st.cache_data.clear()
             st.rerun()
 
-        st.info("🛡️ **Engagement Santé :** Tous nos protégés sont **vaccinés** et **identifiés** avant leur départ.")
+        st.info("🛡️ **Engagement Santé :** Tous nos protégés sont **vaccinés** et **identifiés** (puce électronique) avant leur départ.")
 
         df_filtre = df_dispo.copy()
         if choix_espece != "Tous": df_filtre = df_filtre[df_filtre['Espèce'] == choix_espece]
@@ -147,12 +154,14 @@ try:
 
         st.write(f"**{len(df_filtre)}** protégé(s) à l'adoption")
 
+        # Boucle d'affichage Plein Format
         for _, row in df_filtre.iterrows():
             with st.container(border=True):
-                # Image en grand format vertical
+                # Photo en grand (Haut)
                 url_p = format_image_url(row['Photo'])
                 st.image(url_p if url_p else "https://via.placeholder.com/600x400", use_container_width=True)
                 
+                # Infos
                 st.subheader(row['Nom'])
                 statut = str(row['Statut']).strip()
                 if "Urgence" in statut: st.error(f"🚨 {statut}")
@@ -161,6 +170,7 @@ try:
 
                 st.write(f"**{row['Espèce']}** | {row['Sexe']} | **{row['Âge']} ans**")
                 
+                # Les 3 Onglets
                 t1, t2, t3 = st.tabs(["📖 Histoire", "📋 Caractère", "📞 Contact"])
                 with t1: st.write(row['Histoire'])
                 with t2: st.write(row['Description'])
@@ -183,10 +193,10 @@ try:
                 © 2026 - Application officielle du Refuge Médéric<br>
                 🌐 <a href="https://refugedax40.wordpress.com/" target="_blank">Visiter notre site internet</a><br>
                 Développé par Firnaeth.<br>
-                <div class="version-note">Version 2.3 - Pop-up "Large" & Catalogue plein format</div>
+                <div class="version-note">Version 2.4 - Pop-up Image Large & Fiches Plein Format</div>
             </div>
         </div>
     """, unsafe_allow_html=True)
 
 except Exception as e:
-    st.error("Erreur de chargement.")
+    st.error(f"Erreur de chargement : {e}")
