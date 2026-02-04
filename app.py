@@ -25,38 +25,42 @@ st.set_page_config(
     page_icon=f"data:image/png;base64,{logo_b64}" if logo_b64 else "🐾"
 )
 
-# --- 2. FONCTIONS DE CHARGEMENT ---
+# --- 2. FONCTIONS DE CHARGEMENT ET FORMATAGE ---
 
 def format_image_url(url):
-    url = str(url).strip()
+    if not isinstance(url, str): return ""
+    url = url.strip()
+    # Transforme les liens de partage Drive en liens directs affichables
     if "drive.google.com" in url:
-        # On essaie d'extraire l'ID du fichier
         match = re.search(r"/d/([^/]+)|id=([^&]+)", url)
         if match:
             doc_id = match.group(1) or match.group(2)
-            # On utilise le lien de téléchargement direct qui fonctionne mieux avec Streamlit
-            return f"https://drive.google.com/uc?export=download&id={doc_id}"
+            return f"https://drive.google.com/uc?export=view&id={doc_id}"
     return url
 
 @st.cache_data(ttl=60)
 def load_data_from_sheets(base_url):
     try:
         clean_url = base_url.split('/edit')[0]
-        # Animaux
+        # Chargement des animaux (Onglet par défaut)
         df_animaux = pd.read_csv(f"{clean_url}/export?format=csv")
-        # Config (onglet Config)
+        # Chargement de la config (Onglet 'Config')
         config_url = f"{clean_url}/gviz/tq?tqx=out:csv&sheet=Config"
         df_config = pd.read_csv(config_url)
         return df_animaux, df_config
     except:
         return pd.DataFrame(), pd.DataFrame()
 
-# --- 3. POP-UP ÉVÉNEMENT ---
+# --- 3. DIALOGUE POP-UP ÉVÉNEMENT ---
 @st.dialog("📢 ÉVÉNEMENT AU REFUGE")
 def afficher_evenement(url_affiche):
-    st.image(url_affiche, use_container_width=True)
-    st.markdown("### 🐾 Événement à ne pas manquer !")
-    if st.button("Fermer et voir les animaux"):
+    if url_affiche and url_affiche.startswith('http'):
+        st.image(url_affiche, use_container_width=True)
+    st.markdown("""
+    ### 🐾 Événement à ne pas manquer !
+    Retrouvez toutes les informations sur notre site internet ou directement au refuge.
+    """)
+    if st.button("Accéder au catalogue"):
         st.rerun()
 
 # --- 4. STYLE VISUEL CSS ---
@@ -96,6 +100,7 @@ st.markdown(f"""
         background-color: white; padding: 25px; border-radius: 15px; margin-top: 50px;
         text-align: center; border: 2px solid #FF0000;
     }}
+    .footer-container a {{ color: #FF0000 !important; font-weight: bold; text-decoration: none; }}
     </style>
     
     <img src="data:image/png;base64,{logo_b64 if logo_b64 else ''}" class="logo-overlay">
@@ -106,25 +111,24 @@ try:
     URL_SHEET = st.secrets["gsheets"]["public_url"]
     df, df_config = load_data_from_sheets(URL_SHEET)
 
-    # Gestion de l'affiche sécurisée
+    # 1. Détection de l'affiche d'événement
     url_evenement = None
     if not df_config.empty and 'Cle' in df_config.columns:
-        ligne = df_config[df_config['Cle'] == 'Lien_Affiche']
+        ligne = df_config[df_config['Cle'].astype(str) == 'Lien_Affiche']
         if not ligne.empty:
             val_url = str(ligne.iloc[0]['Valeur']).strip()
-            # On n'affiche que si c'est un vrai lien HTTP
             if val_url.startswith('http'):
                 url_evenement = format_image_url(val_url)
 
+    # Lancement de la Pop-up
     if url_evenement and "popup_vue" not in st.session_state:
         st.session_state.popup_vue = True
-        try:
-            afficher_evenement(url_evenement)
-        except:
-            pass 
+        afficher_evenement(url_evenement)
 
+    # 2. Affichage du contenu principal
     if not df.empty:
         df_dispo = df[df['Statut'] != "Adopté"].copy()
+        
         st.title("🐾 Refuge Médéric")
         st.markdown("#### Association Animaux du Grand Dax")
 
@@ -132,17 +136,32 @@ try:
         with c1:
             choix_espece = st.selectbox("🐶 Espèce", ["Tous"] + sorted(df_dispo['Espèce'].dropna().unique().tolist()))
         with c2:
+            # Gestion simplifiée des tranches d'âge
+            def categoriser_age(age):
+                try:
+                    age = float(str(age).replace(',', '.'))
+                    if age < 1: return "Moins d'un an (Junior)"
+                    elif 1 <= age <= 5: return "1 à 5 ans (Jeune Adulte)"
+                    elif 5 < age < 10: return "5 à 10 ans (Adulte)"
+                    else: return "10 ans et plus (Senior)"
+                except: return "Non précisé"
+            
+            df_dispo['Tranche_Age'] = df_dispo['Âge'].apply(categoriser_age)
             choix_age = st.selectbox("🎂 Tranche d'âge", ["Tous", "Moins d'un an (Junior)", "1 à 5 ans (Jeune Adulte)", "5 à 10 ans (Adulte)", "10 ans et plus (Senior)"])
 
         if st.button("🔄 Actualiser le catalogue"):
             st.cache_data.clear()
             st.rerun()
 
-        st.info("🛡️ **Engagement Santé :** Tous nos protégés sont **vaccinés** et **identifiés**.")
+        st.info("🛡️ **Engagement Santé :** Tous nos protégés sont **vaccinés** et **identifiés** avant leur départ.")
         
+        # Filtres
         df_filtre = df_dispo.copy()
         if choix_espece != "Tous": df_filtre = df_filtre[df_filtre['Espèce'] == choix_espece]
-        
+        if choix_age != "Tous": df_filtre = df_filtre[df_filtre['Tranche_Age'] == choix_age]
+
+        st.write(f"**{len(df_filtre)}** protégé(s) à l'adoption")
+
         for _, row in df_filtre.iterrows():
             with st.container(border=True):
                 col_img, col_txt = st.columns([1, 1.2])
@@ -176,10 +195,10 @@ try:
             <div style="font-size:0.85em; color:#666; margin-top:15px; padding-top:15px; border-top:1px solid #ddd;">
                 © 2026 - Application officielle du Refuge Médéric<br>
                 🌐 <a href="https://refugedax40.wordpress.com/" target="_blank">Visiter notre site internet</a><br>
-                Développé par <b>Firnaeth.</b> avec passion pour nos amis à quatre pattes.
+                Développé par <b>Firnaeth.</b>
             </div>
         </div>
     """, unsafe_allow_html=True)
 
 except Exception as e:
-    st.error(f"Erreur de chargement des données.")
+    st.error(f"Erreur de connexion aux données. Vérifiez votre Google Sheets.")
