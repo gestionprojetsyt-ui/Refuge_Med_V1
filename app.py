@@ -34,37 +34,34 @@ def format_image_url(url):
         match = re.search(r"/d/([^/]+)|id=([^&]+)", url)
         if match:
             doc_id = match.group(1) or match.group(2)
-            # Utilisation du lien thumbnail pour une compatibilité maximale
-            return f"https://drive.google.com/thumbnail?id={doc_id}&sz=w1000"
+            # Lien thumbnail haute résolution pour la pop-up
+            return f"https://drive.google.com/thumbnail?id={doc_id}&sz=w1200"
     return url if url.startswith('http') else None
 
 @st.cache_data(ttl=60)
 def load_all_data(base_url):
     try:
         clean_url = base_url.split('/edit')[0]
-        # Chargement onglet principal
         df_animaux = pd.read_csv(f"{clean_url}/export?format=csv")
-        
-        # Chargement onglet Config (pour la pop-up)
         df_config = pd.DataFrame()
         try:
             config_url = f"{clean_url}/gviz/tq?tqx=out:csv&sheet=Config"
             df_config = pd.read_csv(config_url)
         except:
             pass
-            
         return df_animaux, df_config
     except:
         return pd.DataFrame(), pd.DataFrame()
 
-# --- 3. DIALOGUE POP-UP ---
-@st.dialog("📢 ÉVÉNEMENT AU REFUGE")
+# --- 3. DIALOGUE POP-UP (IMAGE EN GRAND) ---
+@st.dialog("📢 ÉVÉNEMENT AU REFUGE", width="large")
 def afficher_evenement(url_affiche):
     if url_affiche:
+        # Affichage sans bordure pour un effet "affiche"
         st.image(url_affiche, use_container_width=True)
+    st.markdown("---")
     st.markdown("### 🐾 Événement à ne pas manquer !")
-    st.write("Retrouvez toutes les informations au refuge ou sur notre site.")
-    if st.button("Accéder au catalogue"):
+    if st.button("Voir les animaux du refuge", use_container_width=True):
         st.rerun()
 
 # --- 4. STYLE VISUEL CSS ---
@@ -89,17 +86,16 @@ st.markdown(f"""
         text-decoration: none !important; color: white !important; background-color: #ff8f00; 
         padding: 12px; border-radius: 8px; display: block; text-align: center; font-weight: bold; margin-top: 10px;
     }}
+    /* Style image catalogue */
     [data-testid="stImage"] img {{ 
         border: 8px solid white !important; box-shadow: 0px 4px 10px rgba(0,0,0,0.2) !important;
-        height: 320px; object-fit: cover;
+        max-height: 550px; width: 100%; object-fit: cover; border-radius: 10px;
     }}
     .footer-container {{
         background-color: white; padding: 25px; border-radius: 15px; margin-top: 50px;
         text-align: center; border: 2px solid #FF0000;
     }}
-    .version-note {{
-        font-size: 0.75em; color: #999; margin-top: 10px; font-style: italic;
-    }}
+    .version-note {{ font-size: 0.75em; color: #999; margin-top: 10px; font-style: italic; }}
     </style>
     <img src="data:image/png;base64,{logo_b64 if logo_b64 else ''}" class="logo-overlay">
     """, unsafe_allow_html=True)
@@ -122,7 +118,6 @@ try:
     # Affichage Catalogue
     if not df.empty:
         df_dispo = df[df['Statut'] != "Adopté"].copy()
-
         st.title("🐾 Refuge Médéric")
         st.markdown("#### Association Animaux du Grand Dax")
 
@@ -145,7 +140,7 @@ try:
             st.cache_data.clear()
             st.rerun()
 
-        st.info("🛡️ **Engagement Santé :** Tous nos protégés sont **vaccinés** et **identifiés** (puce électronique) avant leur départ.")
+        st.info("🛡️ **Engagement Santé :** Tous nos protégés sont **vaccinés** et **identifiés** avant leur départ.")
 
         df_filtre = df_dispo.copy()
         if choix_espece != "Tous": df_filtre = df_filtre[df_filtre['Espèce'] == choix_espece]
@@ -155,29 +150,27 @@ try:
 
         for _, row in df_filtre.iterrows():
             with st.container(border=True):
-                col_img, col_txt = st.columns([1, 1.2])
-                with col_img:
-                    url_p = format_image_url(row['Photo'])
-                    st.image(url_p if url_p else "https://via.placeholder.com/300", use_container_width=True)
-                with col_txt:
-                    st.subheader(row['Nom'])
-                    statut = str(row['Statut']).strip()
-                    if "Urgence" in statut: st.error(f"🚨 {statut}")
-                    elif "Réservé" in statut: st.warning(f"🟠 {statut}")
-                    else: st.info(f"🏠 {statut}")
+                # Image en grand format vertical
+                url_p = format_image_url(row['Photo'])
+                st.image(url_p if url_p else "https://via.placeholder.com/600x400", use_container_width=True)
+                
+                st.subheader(row['Nom'])
+                statut = str(row['Statut']).strip()
+                if "Urgence" in statut: st.error(f"🚨 {statut}")
+                elif "Réservé" in statut: st.warning(f"🟠 {statut}")
+                else: st.info(f"🏠 {statut}")
 
-                    st.write(f"**{row['Espèce']}** | {row['Sexe']} | **{row['Âge']} ans**")
-                    
-                    # Les 3 onglets (Histoire, Caractère, Contact)
-                    t1, t2, t3 = st.tabs(["📖 Histoire", "📋 Caractère", "📞 Contact"])
-                    with t1: st.write(row['Histoire'])
-                    with t2: st.write(row['Description'])
-                    with t3:
-                        if "Réservé" in statut:
-                            st.markdown(f'<div class="btn-reserve">🧡 Animal déjà réservé</div>', unsafe_allow_html=True)
-                        else:
-                            st.markdown(f'<a href="tel:0558736882" class="btn-contact">📞 Appeler le refuge</a>', unsafe_allow_html=True)
-                            st.markdown(f'<a href="mailto:animauxdugranddax@gmail.com?subject=Adoption de {row["Nom"]}" class="btn-contact">📩 Envoyer un Mail</a>', unsafe_allow_html=True)
+                st.write(f"**{row['Espèce']}** | {row['Sexe']} | **{row['Âge']} ans**")
+                
+                t1, t2, t3 = st.tabs(["📖 Histoire", "📋 Caractère", "📞 Contact"])
+                with t1: st.write(row['Histoire'])
+                with t2: st.write(row['Description'])
+                with t3:
+                    if "Réservé" in statut:
+                        st.markdown(f'<div class="btn-reserve">🧡 Animal déjà réservé</div>', unsafe_allow_html=True)
+                    else:
+                        st.markdown(f'<a href="tel:0558736882" class="btn-contact">📞 Appeler le refuge</a>', unsafe_allow_html=True)
+                        st.markdown(f'<a href="mailto:animauxdugranddax@gmail.com?subject=Adoption de {row["Nom"]}" class="btn-contact">📩 Envoyer un Mail</a>', unsafe_allow_html=True)
 
     # --- 6. PIED DE PAGE ---
     st.markdown("""
@@ -191,7 +184,7 @@ try:
                 © 2026 - Application officielle du Refuge Médéric<br>
                 🌐 <a href="https://refugedax40.wordpress.com/" target="_blank">Visiter notre site internet</a><br>
                 Développé par Firnaeth.<br>
-                <div class="version-note">Version 2.1 - Correctif affichage pop-up dynamique (Drive)</div>
+                <div class="version-note">Version 2.3 - Pop-up "Large" & Catalogue plein format</div>
             </div>
         </div>
     """, unsafe_allow_html=True)
