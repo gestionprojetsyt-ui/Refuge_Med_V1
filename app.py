@@ -25,7 +25,7 @@ st.set_page_config(
     page_icon=f"data:image/png;base64,{logo_b64}" if logo_b64 else "🐾"
 )
 
-# --- 2. FONCTIONS DE CHARGEMENT ET FORMATAGE ---
+# --- 2. FONCTIONS DE CHARGEMENT ---
 
 def format_image_url(url):
     url = str(url).strip()
@@ -40,24 +40,21 @@ def format_image_url(url):
 def load_data_from_sheets(base_url):
     try:
         clean_url = base_url.split('/edit')[0]
-        # Chargement des animaux (Onglet principal)
+        # Animaux
         df_animaux = pd.read_csv(f"{clean_url}/export?format=csv")
-        # Chargement de la config (Onglet 'Config')
+        # Config (onglet Config)
         config_url = f"{clean_url}/gviz/tq?tqx=out:csv&sheet=Config"
         df_config = pd.read_csv(config_url)
         return df_animaux, df_config
-    except Exception as e:
+    except:
         return pd.DataFrame(), pd.DataFrame()
 
-# --- 3. DIALOGUE POP-UP ÉVÉNEMENT ---
+# --- 3. POP-UP ÉVÉNEMENT ---
 @st.dialog("📢 ÉVÉNEMENT AU REFUGE")
 def afficher_evenement(url_affiche):
     st.image(url_affiche, use_container_width=True)
-    st.markdown("""
-    ### 🐾 Événement à ne pas manquer !
-    Retrouvez toutes les informations sur notre site internet ou directement au refuge.
-    """)
-    if st.button("Voir les animaux à l'adoption"):
+    st.markdown("### 🐾 Événement à ne pas manquer !")
+    if st.button("Fermer et voir les animaux"):
         st.rerun()
 
 # --- 4. STYLE VISUEL CSS ---
@@ -97,7 +94,6 @@ st.markdown(f"""
         background-color: white; padding: 25px; border-radius: 15px; margin-top: 50px;
         text-align: center; border: 2px solid #FF0000;
     }}
-    .footer-container a {{ color: #FF0000 !important; font-weight: bold; text-decoration: none; }}
     </style>
     
     <img src="data:image/png;base64,{logo_b64 if logo_b64 else ''}" class="logo-overlay">
@@ -105,32 +101,28 @@ st.markdown(f"""
 
 # --- 5. LOGIQUE PRINCIPALE ---
 try:
-    # Récupération de l'URL secrète
     URL_SHEET = st.secrets["gsheets"]["public_url"]
     df, df_config = load_data_from_sheets(URL_SHEET)
 
-    # 1. Gestion de l'affiche via Google Sheets (onglet Config)
+    # Gestion de l'affiche sécurisée
     url_evenement = None
     if not df_config.empty and 'Cle' in df_config.columns:
         ligne = df_config[df_config['Cle'] == 'Lien_Affiche']
         if not ligne.empty:
             val_url = str(ligne.iloc[0]['Valeur']).strip()
-            # On vérifie que c'est bien une URL et non un simple nom de fichier
+            # On n'affiche que si c'est un vrai lien HTTP
             if val_url.startswith('http'):
                 url_evenement = format_image_url(val_url)
 
-    # Affichage de la pop-up si une URL valide est trouvée
     if url_evenement and "popup_vue" not in st.session_state:
         st.session_state.popup_vue = True
         try:
             afficher_evenement(url_evenement)
         except:
-            pass # Si l'image bug, on ne bloque pas l'application
+            pass 
 
-    # 2. Affichage du catalogue
     if not df.empty:
         df_dispo = df[df['Statut'] != "Adopté"].copy()
-        
         st.title("🐾 Refuge Médéric")
         st.markdown("#### Association Animaux du Grand Dax")
 
@@ -144,26 +136,11 @@ try:
             st.cache_data.clear()
             st.rerun()
 
-        st.info("🛡️ **Engagement Santé :** Tous nos protégés sont **vaccinés** et **identifiés** (puce électronique) avant leur départ du refuge.")
-        
-        # Application des filtres
-        def categoriser_age(age):
-            try:
-                age = float(str(age).replace(',', '.'))
-                if age < 1: return "Moins d'un an (Junior)"
-                elif 1 <= age <= 5: return "1 à 5 ans (Jeune Adulte)"
-                elif 5 < age < 10: return "5 à 10 ans (Adulte)"
-                else: return "10 ans et plus (Senior)"
-            except: return "Non précisé"
-        
-        df_dispo['Tranche_Age'] = df_dispo['Âge'].apply(categoriser_age)
+        st.info("🛡️ **Engagement Santé :** Tous nos protégés sont **vaccinés** et **identifiés**.")
         
         df_filtre = df_dispo.copy()
         if choix_espece != "Tous": df_filtre = df_filtre[df_filtre['Espèce'] == choix_espece]
-        if choix_age != "Tous": df_filtre = df_filtre[df_filtre['Tranche_Age'] == choix_age]
-
-        st.write(f"**{len(df_filtre)}** protégé(s) à l'adoption")
-
+        
         for _, row in df_filtre.iterrows():
             with st.container(border=True):
                 col_img, col_txt = st.columns([1, 1.2])
@@ -182,9 +159,7 @@ try:
                     with t1: st.write(row['Histoire'])
                     with t2: st.write(row['Description'])
                     
-                    if "Réservé" in statut:
-                        st.markdown(f'<div class="btn-reserve">🧡 Animal déjà réservé</div>', unsafe_allow_html=True)
-                    else:
+                    if "Réservé" not in statut:
                         st.markdown(f'<a href="tel:0558736882" class="btn-contact">📞 Appeler le refuge</a>', unsafe_allow_html=True)
                         st.markdown(f'<a href="mailto:animauxdugranddax@gmail.com?subject=Adoption de {row["Nom"]}" class="btn-contact">📩 Envoyer un Mail</a>', unsafe_allow_html=True)
 
@@ -198,3 +173,11 @@ try:
             </div>
             <div style="font-size:0.85em; color:#666; margin-top:15px; padding-top:15px; border-top:1px solid #ddd;">
                 © 2026 - Application officielle du Refuge Médéric<br>
+                🌐 <a href="https://refugedax40.wordpress.com/" target="_blank">Visiter notre site internet</a><br>
+                Développé par <b>Firnaeth.</b> avec passion pour nos amis à quatre pattes.
+            </div>
+        </div>
+    """, unsafe_allow_html=True)
+
+except Exception as e:
+    st.error(f"Erreur de chargement des données.")
