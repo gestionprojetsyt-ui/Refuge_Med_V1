@@ -51,7 +51,7 @@ def afficher_evenement(liens):
                 st.markdown("""<hr style="border: 0; border-top: 2px solid #ddd; margin: 40px auto; width: 60%;">""", unsafe_allow_html=True)
                 
     st.markdown("### 🐾 Événements à ne pas manquer !")
-    if st.button("Fermer et voir les animaux", use_container_width=True):
+    if st.button("Découvrir nos boules de poils à l'adoption ✨", use_container_width=True):
         st.rerun()
 
 # --- 3. STYLE VISUEL (COUCHES SUPERPOSÉES) ---
