@@ -175,10 +175,12 @@ try:
                 📞 05 58 73 68 82 | ⏰ 14h00 - 18h00 (Mercredi au Dimanche)
             </div>
             <div style="font-size:0.85em; color:#666; margin-top:15px; padding-top:15px; border-top:1px solid #ddd;">
-                © 2026 - Application officielle du Refuge Médéric
-            </div>
+                © 2026 - Application officielle du Refuge Médéric<br>
+                🌐 <a href="https://refugedax40.wordpress.com/" target="_blank">Visiter notre site internet</a><br>
+            Développé par Firnaeth. avec passion pour nos amis à quatre pattes.
         </div>
     """, unsafe_allow_html=True)
 except Exception as e:
-    st.error(f"Erreur de chargement.")
+    st.error("Erreur de chargement.")
+
 
