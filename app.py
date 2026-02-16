@@ -28,7 +28,7 @@ st.set_page_config(
     page_icon=f"data:image/png;base64,{logo_b64}" if logo_b64 else "🐾"
 )
 
-# --- 2. FONCTION PDF (AVEC MENTION SOS SENIOR) ---
+# --- 2. FONCTION PDF CORRIGÉE ---
 def traduire_bool(valeur):
     return "OUI" if str(valeur).upper() == "TRUE" else "NON"
 
@@ -49,13 +49,11 @@ def generer_pdf(row):
                     with self.local_context(fill_opacity=0.05):
                         self.image(URL_LOGO_HD, x=45, y=80, w=120)
                 except: pass
-
             def footer(self):
                 self.set_y(-15)
                 self.set_font("Helvetica", 'I', 8)
                 self.set_text_color(128)
-                footer_txt = "Refuge Médéric - 182 chemin Lucien Viau, 40990 St-Paul-lès-Dax | 05 58 73 68 82\nSite web : https://refugedax40.wordpress.com/"
-                self.multi_cell(0, 4, footer_txt, align='C')
+                self.multi_cell(0, 4, "Refuge Médéric - 182 chemin Lucien Viau, 40990 St-Paul-lès-Dax | 05 58 73 68 82\nSite web : https://refugedax40.wordpress.com/", align='C')
 
         pdf = PDF()
         pdf.add_page()
@@ -67,6 +65,7 @@ def generer_pdf(row):
         pdf.ln(5)
 
         # Photo
+        y_photo = pdf.get_y()
         try:
             u_photo = format_image_url(row['Photo'])
             resp = requests.get(u_photo, timeout=5)
@@ -74,33 +73,31 @@ def generer_pdf(row):
             img_buf = BytesIO()
             img.save(img_buf, format="JPEG")
             img_buf.seek(0)
-            pdf.image(img_buf, x=60, y=35, w=90)
-            pdf.ln(92) # On laisse un peu de place pour le badge Senior si besoin
+            pdf.image(img_buf, x=60, y=y_photo, w=90)
+            pdf.set_y(y_photo + 95)
         except:
             pdf.ln(10)
 
-        # MENTION SOS SENIOR DANS LE PDF
-        if row['Tranche_Age'] == "10 ans et plus (Senior)":
-            pdf.set_fill_color(255, 249, 196) # Jaune clair
-            pdf.set_text_color(133, 100, 4)   # Marron foncé
+        # Mention SOS Senior
+        if str(row['Tranche_Age']) == "10 ans et plus (Senior)":
+            pdf.set_fill_color(255, 249, 196)
+            pdf.set_text_color(133, 100, 4)
             pdf.set_font("Helvetica", 'B', 12)
             pdf.cell(0, 10, "✨ SOS SENIOR : Don Libre", ln=True, align='C', fill=True)
-            pdf.ln(2)
+            pdf.ln(5)
         else:
-            pdf.ln(8)
+            pdf.ln(5)
 
         # Identité
         pdf.set_font("Helvetica", 'B', 14)
         pdf.set_text_color(0, 0, 0)
         pdf.cell(0, 8, f"{row['Espèce']} | {row['Sexe']} | {row['Âge']} ans", ln=True, align='C')
-        
         race_val = str(row.get('Race', 'Race non précisée'))
-        if race_val.lower() == 'nan' or not race_val: race_val = "Race non précisée"
         pdf.set_font("Helvetica", 'I', 11)
         pdf.cell(0, 6, f"Type / Race : {race_val}", ln=True, align='C')
         pdf.ln(10)
 
-        # --- MISE EN PAGE COLONNES ---
+        # Colonnes Caractère / Aptitudes
         y_start = pdf.get_y()
         pdf.set_fill_color(240, 240, 240)
         pdf.set_font("Helvetica", 'B', 12)
@@ -135,7 +132,7 @@ def generer_pdf(row):
         pdf.multi_cell(0, 5, histoire)
         
         return bytes(pdf.output())
-    except:
+    except Exception as e:
         return None
 
 # --- 3. FONCTION POP-UP ---
@@ -213,7 +210,6 @@ def load_all_data(url):
         try:
             df_config = pd.read_csv(f"{base_url}/gviz/tq?tqx=out:csv&sheet=Config")
         except: pass
-
         def categoriser_age(age):
             try:
                 age = float(str(age).replace(',', '.'))
@@ -254,8 +250,6 @@ try:
             st.cache_data.clear()
             st.rerun()
 
-        st.info("🛡️ **Engagement Santé :** Tous nos protégés sont **vaccinés** et **identifiés** (puce électronique).")
-        
         df_filtre = df_dispo.copy()
         if choix_espece != "Tous": df_filtre = df_filtre[df_filtre['Espèce'] == choix_espece]
         if choix_age != "Tous": df_filtre = df_filtre[df_filtre['Tranche_Age'] == choix_age]
@@ -287,9 +281,17 @@ try:
                     with t1: st.write(row['Histoire'])
                     with t2: st.write(row['Description'])
                     
-                    pdf_data = generer_pdf(row)
-                    if pdf_data:
-                        st.download_button(f"📄 Télécharger la fiche de {row['Nom']}", pdf_data, f"Fiche_{row['Nom']}.pdf", "application/pdf", key=f"pdf_{i}", use_container_width=True)
+                    # GENERATION PDF
+                    pdf_bytes = generer_pdf(row)
+                    if pdf_bytes:
+                        st.download_button(
+                            label=f"📄 Télécharger la fiche de {row['Nom']}",
+                            data=pdf_bytes,
+                            file_name=f"Fiche_{row['Nom']}.pdf",
+                            mime="application/pdf",
+                            key=f"pdf_btn_{i}",
+                            use_container_width=True
+                        )
 
                     if "Réservé" in statut:
                         st.markdown(f'<div class="btn-reserve">🧡 Animal déjà réservé</div>', unsafe_allow_html=True)
@@ -308,10 +310,9 @@ try:
             <div style="font-size:0.85em; color:#666; margin-top:15px; padding-top:15px; border-top:1px solid #ddd;">
                 © 2026 - Application officielle du Refuge Médéric<br>
                 🌐 <a href="https://refugedax40.wordpress.com/" target="_blank">Visiter notre site internet</a><br>
-                Développé avec passion pour nos amis à quatre pattes.
-                <div style="font-style: italic; margin-top:5px; font-size:0.8em;">Version 3.6 - PDF Senior Support</div>
+                <div style="font-style: italic; margin-top:5px; font-size:0.8em;">Version 3.7 - Correction PDF Senior</div>
             </div>
         </div>
     """, unsafe_allow_html=True)
 except Exception as e:
-    st.error(f"Erreur de chargement : {e}")
+    st.error(f"Erreur : {e}")
