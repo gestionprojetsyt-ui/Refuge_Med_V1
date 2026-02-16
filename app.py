@@ -141,10 +141,11 @@ st.markdown(f"""
         font-weight: bold !important; 
         text-align: center !important; 
         border: 2px dashed #ffeeba !important; 
-        margin: 10px 0 !important;
-        display: inline-block !important;
+        margin: 10px auto !important;
+        display: block !important;
         box-shadow: 2px 2px 5px rgba(0,0,0,0.05) !important;
         font-size: 0.9em !important;
+        max-width: 90%;
     }}
 
     [data-testid="stImage"] img {{ 
@@ -249,14 +250,14 @@ try:
                 with col_img:
                     u_photo = format_image_url(row['Photo'])
                     st.image(u_photo if u_photo.startswith('http') else "https://via.placeholder.com/300", use_container_width=True)
+                    
+                    # --- AFFICHAGE SOUS LA PHOTO ---
+                    if row['Tranche_Age'] == "10 ans et plus (Senior)":
+                        st.markdown('<div class="senior-badge">✨ SOS SENIOR : Don Libre</div>', unsafe_allow_html=True)
 
                 with col_txt:
                     st.subheader(row['Nom'])
                     
-                    # AFFICHAGE DU BADGE SENIOR CORRIGÉ (JUSTE SOUS LE NOM)
-                    if row['Tranche_Age'] == "10 ans et plus (Senior)":
-                        st.markdown('<div class="senior-badge">✨ SOS SENIOR : Don Libre</div>', unsafe_allow_html=True)
-
                     statut = str(row['Statut']).strip()
                     if "Urgence" in statut: st.error(f"🚨 {statut}")
                     elif "Réservé" in statut: st.warning(f"🟠 {statut}")
