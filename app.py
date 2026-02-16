@@ -145,30 +145,25 @@ try:
                     
                     st.write(f"**{row['Espèce']}** | {row['Sexe']} | **{row['Âge']} ans**")
                     
-                    # --- PRÉPARATION DES APTITUDES ---
+                    # --- PRÉPARATION DES APTITUDES AVEC ÉMOJIS ---
                     def check_ok(val): return "✅" if str(val).upper() == "TRUE" else "❌"
                     def check_color(val): return "#2e7d32" if str(val).upper() == "TRUE" else "#c62828"
-                    
-                    icon_cat = "https://cdn-icons-png.flaticon.com/512/620/620851.png"
-                    icon_dog = "https://cdn-icons-png.flaticon.com/512/620/620885.png"
-                    icon_kid = "https://cdn-icons-png.flaticon.com/512/167/167750.png"
 
-                    # BOITE APTITUDE AVEC LISERÉ ROUGE
                     apt_html = f"""
                     <div style="background-color: #f8f9fa; padding: 12px; border-radius: 8px; border-left: 5px solid #FF0000; margin: 15px 0; border-top: 1px solid #eee; border-right: 1px solid #eee; border-bottom: 1px solid #eee;">
                         <b style="color:#FF0000; display:block; margin-bottom:10px; font-size:0.9em;">🏠 APTITUDES :</b>
                         <div style="display: flex; align-items: center; margin-bottom: 5px;">
-                            <img src="{icon_cat}" width="20" style="margin-right: 10px;">
+                            <span style="margin-right: 10px; font-size: 1.2em;">🐈</span>
                             <span style="flex-grow: 1; color: #333; font-size: 0.9em;">Ok Chats</span>
                             <span style="color: {check_color(row.get('OK_Chat'))}; font-weight: bold;">{check_ok(row.get('OK_Chat'))}</span>
                         </div>
                         <div style="display: flex; align-items: center; margin-bottom: 5px;">
-                            <img src="{icon_dog}" width="20" style="margin-right: 10px;">
+                            <span style="margin-right: 10px; font-size: 1.2em;">🐕</span>
                             <span style="flex-grow: 1; color: #333; font-size: 0.9em;">Ok Chiens</span>
                             <span style="color: {check_color(row.get('OK_Chien'))}; font-weight: bold;">{check_ok(row.get('OK_Chien'))}</span>
                         </div>
                         <div style="display: flex; align-items: center;">
-                            <img src="{icon_kid}" width="20" style="margin-right: 10px;">
+                            <span style="margin-right: 10px; font-size: 1.2em;">🧒</span>
                             <span style="flex-grow: 1; color: #333; font-size: 0.9em;">Ok Enfants</span>
                             <span style="color: {check_color(row.get('OK_Enfant'))}; font-weight: bold;">{check_ok(row.get('OK_Enfant'))}</span>
                         </div>
@@ -182,7 +177,7 @@ try:
                     
                     st.markdown(f'<a href="tel:0558736882" class="btn-contact">📞 Appeler le refuge</a>', unsafe_allow_html=True)
 
-    # PIED DE PAGE AVEC LISERÉ ROUGE
+    # PIED DE PAGE
     st.markdown("""<div style="text-align:center; padding:20px; border-top:5px solid #FF0000; margin-top:30px; background-color:white; border-radius:10px; border-bottom: 1px solid #eee; border-left: 1px solid #eee; border-right: 1px solid #eee;">
     <b style="color:#FF0000;">Refuge Médéric - Association Animaux du Grand Dax</b><br>
     182 chemin Lucien Viau, 40990 St-Paul-lès-Dax</div>""", unsafe_allow_html=True)
