@@ -1,28 +1,24 @@
 import streamlit as st
 import pandas as pd
-import re
 import requests
 import base64
 from fpdf import FPDF
-from io import BytesIO
 
-# --- 1. CONFIGURATION ---
+# --- CONFIGURATION ---
 URL_LOGO_HD = "https://drive.google.com/uc?export=view&id=1M8yTjY6tt5YZhPvixn-EoFIiolwXRn7E"
 
 @st.cache_data
-def get_base64_image(url):
+def get_base64_logo(url):
     try:
-        response = requests.get(url, headers={"User-Agent": "Mozilla/5.0"}, timeout=10)
-        if response.status_code == 200:
-            return base64.b64encode(response.content).decode()
-    except: return None
-    return None
+        response = requests.get(url, timeout=10)
+        return base64.b64encode(response.content).decode()
+    except: return ""
 
-logo_b64 = get_base64_image(URL_LOGO_HD)
+logo_b64 = get_base64_logo(URL_LOGO_HD)
 
 st.set_page_config(page_title="Refuge Médéric", layout="centered", page_icon="🐾")
 
-# --- 2. FONCTION PDF ---
+# --- FONCTION PDF ---
 def generer_pdf(row):
     try:
         pdf = FPDF()
@@ -45,13 +41,12 @@ def generer_pdf(row):
         pdf.set_font("Arial", 'B', 12)
         pdf.cell(0, 10, "HISTOIRE :", ln=True)
         pdf.set_font("Arial", '', 10)
-        # Gestion des caractères spéciaux pour le PDF
         histoire = str(row['Histoire']).encode('latin-1', 'replace').decode('latin-1')
         pdf.multi_cell(0, 6, histoire)
         return pdf.output(dest='S')
     except: return None
 
-# --- 3. STYLE CSS ---
+# --- STYLE CSS ---
 st.markdown(f"""
     <style>
     .stApp {{ background-color: transparent !important; }}
@@ -75,26 +70,23 @@ st.markdown(f"""
     </style>
     """, unsafe_allow_html=True)
 
-# --- 4. CHARGEMENT DATA ---
+# --- CHARGEMENT DATA ---
 @st.cache_data(ttl=60)
-def load_data(url):
+def load_data():
     try:
-        csv_url = url.replace('/edit?usp=sharing', '/export?format=csv')
-        df = pd.read_csv(csv_url)
+        url = st.secrets["gsheets"]["public_url"].replace('/edit?usp=sharing', '/export?format=csv')
+        df = pd.read_csv(url)
         def cat_age(a):
             try:
-                a = float(str(a).replace(',', '.'))
-                return "Senior" if a >= 10 else "Autre"
+                return "Senior" if float(str(a).replace(',', '.')) >= 10 else "Autre"
             except: return "Autre"
         df['Tranche_Age'] = df['Âge'].apply(cat_age)
         return df
     except: return pd.DataFrame()
 
-# --- 5. INTERFACE ---
+# --- INTERFACE ---
 try:
-    URL_SHEET = st.secrets["gsheets"]["public_url"]
-    df = load_data(URL_SHEET)
-
+    df = load_data()
     if not df.empty:
         st.title("🐾 Refuge Médéric")
         df_dispo = df[df['Statut'] != "Adopté"]
@@ -112,26 +104,17 @@ try:
                     st.write(f"**{row['Espèce']}** | {row['Sexe']} | **{row['Âge']} ans**")
                     
                     # Aptitudes
-                    def check_ok(v): return "✅" if str(v).upper() == "TRUE" else "❌"
+                    def check(v): return "✅" if str(v).upper() == "TRUE" else "❌"
                     st.markdown(f'''<div class="aptitude-box"><b>🏠 APTITUDES :</b><br>
-                    🐈 Chats : {check_ok(row.get('OK_Chat'))}<br>
-                    🐕 Chiens : {check_ok(row.get('OK_Chien'))}<br>
-                    🧒 Enfants : {check_ok(row.get('OK_Enfant'))}</div>''', unsafe_allow_html=True)
+                    🐈 Chats : {check(row.get('OK_Chat'))} | 🐕 Chiens : {check(row.get('OK_Chien'))} | 🧒 Enfants : {check(row.get('OK_Enfant'))}</div>''', unsafe_allow_html=True)
 
                     st.markdown(f'<a href="tel:0558736882" class="btn-contact">📞 Appeler le refuge</a>', unsafe_allow_html=True)
                     
-                    # Bouton PDF
                     pdf_bytes = generer_pdf(row)
                     if pdf_bytes:
-                        st.download_button(
-                            label="📄 Télécharger la fiche PDF",
-                            data=pdf_bytes,
-                            file_name=f"Fiche_{row['Nom']}.pdf",
-                            mime="application/pdf",
-                            use_container_width=True
-                        )
+                        st.download_button(label="📄 Télécharger la fiche PDF", data=pdf_bytes, file_name=f"Fiche_{row['Nom']}.pdf", mime="application/pdf", use_container_width=True)
 
-    st.markdown('<div style="text-align:center; padding:20px; border-top:1px solid #ddd; color:grey;">Version Alpha_1.9 - SOS Senior & PDF</div>', unsafe_allow_html=True)
+    st.markdown('<div style="text-align:center; color:grey; font-size: 0.8em; margin-top:50px;">Version Alpha_1.9 - SOS Senior & PDF</div>', unsafe_allow_html=True)
 
 except Exception as e:
-    st.error(f"Erreur : {e}")
+    st.error(f"Une petite erreur s'est glissée : {e}")
