@@ -153,12 +153,12 @@ try:
                     <div style="background-color: #f8f9fa; padding: 12px; border-radius: 8px; border-left: 5px solid #FF0000; margin: 15px 0; border-top: 1px solid #eee; border-right: 1px solid #eee; border-bottom: 1px solid #eee;">
                         <b style="color:#FF0000; display:block; margin-bottom:10px; font-size:0.9em;">🏠 APTITUDES :</b>
                         <div style="display: flex; align-items: center; margin-bottom: 5px;">
-                            <span style="margin-right: 10px; font-size: 1.2em;">🐈</span>
+                            <span style="margin-right: 10px; font-size: 1.2em;">🐱</span>
                             <span style="flex-grow: 1; color: #333; font-size: 0.9em;">Ok Chats</span>
                             <span style="color: {check_color(row.get('OK_Chat'))}; font-weight: bold;">{check_ok(row.get('OK_Chat'))}</span>
                         </div>
                         <div style="display: flex; align-items: center; margin-bottom: 5px;">
-                            <span style="margin-right: 10px; font-size: 1.2em;">🐕</span>
+                            <span style="margin-right: 10px; font-size: 1.2em;">🐶</span>
                             <span style="flex-grow: 1; color: #333; font-size: 0.9em;">Ok Chiens</span>
                             <span style="color: {check_color(row.get('OK_Chien'))}; font-weight: bold;">{check_ok(row.get('OK_Chien'))}</span>
                         </div>
