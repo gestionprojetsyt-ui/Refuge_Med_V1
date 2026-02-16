@@ -2,4 +2,4 @@ pandas
 streamlit
 requests
 fpdf2
-Pillow
+pillow
