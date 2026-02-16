@@ -132,7 +132,7 @@ st.markdown(f"""
     .stApp {{ background-color: transparent !important; }}
     .logo-overlay {{
         position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
-        width: 70vw; opacity: 0.05; z-index: -1000; pointer-events: none;
+        width: 70vw; opacity: 0.03; z-index: -1000; pointer-events: none;
     }}
     [data-testid="stVerticalBlockBorderWrapper"] {{
         background-color: white !important; border-radius: 15px !important;
