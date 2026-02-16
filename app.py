@@ -60,7 +60,7 @@ st.markdown(f"""
         display: inline-block; margin-bottom: 10px;
     }}
     .btn-contact {{ 
-        text-decoration: none !important; color: white !important; background-color: #2e7d32; 
+        text-decoration: none !important; color: white !important; background-color: #2e7d32 !important; 
         padding: 12px; border-radius: 8px; display: block; text-align: center; font-weight: bold; margin-top: 10px;
     }}
     h1 {{ color: #FF0000 !important; font-weight: 800; }}
@@ -145,32 +145,36 @@ try:
                     
                     st.write(f"**{row['Espèce']}** | {row['Sexe']} | **{row['Âge']} ans**")
                     
-                    # --- FONCTION D'AFFICHAGE APTITUDES (CORRIGÉE) ---
-                    def build_aptitude_row(val, label, icon_url):
-                        is_ok = str(val).upper() == "TRUE"
-                        status_color = "#2e7d32" if is_ok else "#c62828"
-                        status_icon = "✅" if is_ok else "❌"
-                        return f"""
-                        <div style="display: flex; align-items: center; margin-bottom: 6px;">
-                            <img src="{icon_url}" width="22" style="margin-right: 12px;">
-                            <span style="flex-grow: 1; color: #333; font-weight: 500;">{label}</span>
-                            <span style="color: {status_color}; font-weight: bold;">{status_icon}</span>
-                        </div>
-                        """
-
+                    # --- PRÉPARATION DES APTITUDES ---
+                    def check_ok(val): return "✅" if str(val).upper() == "TRUE" else "❌"
+                    def check_color(val): return "#2e7d32" if str(val).upper() == "TRUE" else "#c62828"
+                    
                     icon_cat = "https://cdn-icons-png.flaticon.com/512/620/620851.png"
                     icon_dog = "https://cdn-icons-png.flaticon.com/512/620/620885.png"
                     icon_kid = "https://cdn-icons-png.flaticon.com/512/167/167750.png"
 
-                    # L'élément CRUCIAL : unsafe_allow_html=True
-                    st.markdown(f"""
-                    <div style="background-color: #f8f9fa; padding: 12px; border-radius: 12px; border: 1px solid #eee; margin: 15px 0;">
+                    # BOITE APTITUDE AVEC LISERÉ ROUGE
+                    apt_html = f"""
+                    <div style="background-color: #f8f9fa; padding: 12px; border-radius: 8px; border-left: 5px solid #FF0000; margin: 15px 0; border-top: 1px solid #eee; border-right: 1px solid #eee; border-bottom: 1px solid #eee;">
                         <b style="color:#FF0000; display:block; margin-bottom:10px; font-size:0.9em;">🏠 APTITUDES :</b>
-                        {build_aptitude_row(row.get('OK_Chat'), "Ok Chats", icon_cat)}
-                        {build_aptitude_row(row.get('OK_Chien'), "Ok Chiens", icon_dog)}
-                        {build_aptitude_row(row.get('OK_Enfant'), "Ok Enfants", icon_kid)}
+                        <div style="display: flex; align-items: center; margin-bottom: 5px;">
+                            <img src="{icon_cat}" width="20" style="margin-right: 10px;">
+                            <span style="flex-grow: 1; color: #333; font-size: 0.9em;">Ok Chats</span>
+                            <span style="color: {check_color(row.get('OK_Chat'))}; font-weight: bold;">{check_ok(row.get('OK_Chat'))}</span>
+                        </div>
+                        <div style="display: flex; align-items: center; margin-bottom: 5px;">
+                            <img src="{icon_dog}" width="20" style="margin-right: 10px;">
+                            <span style="flex-grow: 1; color: #333; font-size: 0.9em;">Ok Chiens</span>
+                            <span style="color: {check_color(row.get('OK_Chien'))}; font-weight: bold;">{check_ok(row.get('OK_Chien'))}</span>
+                        </div>
+                        <div style="display: flex; align-items: center;">
+                            <img src="{icon_kid}" width="20" style="margin-right: 10px;">
+                            <span style="flex-grow: 1; color: #333; font-size: 0.9em;">Ok Enfants</span>
+                            <span style="color: {check_color(row.get('OK_Enfant'))}; font-weight: bold;">{check_ok(row.get('OK_Enfant'))}</span>
+                        </div>
                     </div>
-                    """, unsafe_allow_html=True)
+                    """
+                    st.markdown(apt_html, unsafe_allow_html=True)
 
                     t1, t2 = st.tabs(["📖 Histoire", "📋 Caractère"])
                     with t1: st.write(row['Histoire'])
@@ -178,8 +182,10 @@ try:
                     
                     st.markdown(f'<a href="tel:0558736882" class="btn-contact">📞 Appeler le refuge</a>', unsafe_allow_html=True)
 
-    st.markdown("""<div style="text-align:center; padding:20px; border-top:2px solid #FF0000; margin-top:30px; background-color:white; border-radius:15px;">
-    <b style="color:#FF0000;">Refuge Médéric - Association Animaux du Grand Dax</b></div>""", unsafe_allow_html=True)
+    # PIED DE PAGE AVEC LISERÉ ROUGE
+    st.markdown("""<div style="text-align:center; padding:20px; border-top:5px solid #FF0000; margin-top:30px; background-color:white; border-radius:10px; border-bottom: 1px solid #eee; border-left: 1px solid #eee; border-right: 1px solid #eee;">
+    <b style="color:#FF0000;">Refuge Médéric - Association Animaux du Grand Dax</b><br>
+    182 chemin Lucien Viau, 40990 St-Paul-lès-Dax</div>""", unsafe_allow_html=True)
 
 except Exception as e:
     st.error(f"Erreur : {e}")
