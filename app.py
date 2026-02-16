@@ -183,6 +183,10 @@ try:
 
                     st.write(f"**{row['Espèce']}** | {row['Sexe']} | **{row['Âge']} ans**")
 
+                    # --- AJOUT DU DON LIBRE POUR LES SENIORS ---
+                    if row['Tranche_Age'] == "10 ans et plus (Senior)":
+                        st.markdown('<div class="senior-tag">🎁 SOS Senior : Don Libre</div>', unsafe_allow_html=True)
+
                     # --- BLOC APTITUDES AVEC ÉMOJIS ET LISERÉ ROUGE ---
                     def check_ok(val): return "✅" if str(val).upper() == "TRUE" else "❌"
                     def check_color(val): return "#2e7d32" if str(val).upper() == "TRUE" else "#c62828"
