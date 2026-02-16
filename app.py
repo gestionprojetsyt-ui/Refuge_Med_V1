@@ -28,7 +28,7 @@ st.set_page_config(
     page_icon=f"data:image/png;base64,{logo_b64}" if logo_b64 else "🐾"
 )
 
-# --- 2. FONCTION PDF (MISE EN PAGE COLONNES + BANDES GRISES) ---
+# --- 2. FONCTION PDF (MISE EN PAGE COLONNES + BANDES GRISES + RACE) ---
 def traduire_bool(valeur):
     return "OUI" if str(valeur).upper() == "TRUE" else "NON"
 
@@ -54,19 +54,19 @@ def generer_pdf(row):
                 self.set_y(-15)
                 self.set_font("Helvetica", 'I', 8)
                 self.set_text_color(128)
-                footer_txt = "Refuge Médéric - 182 chemin Lucien Viau, 40990 St-Paul-lès-Dax | 05 58 73 68 82\nSite : https://refugedax40.wordpress.com/"
+                footer_txt = "Refuge Médéric - 182 chemin Lucien Viau, 40990 St-Paul-lès-Dax | 05 58 73 68 82\nSite web : https://refugedax40.wordpress.com/"
                 self.multi_cell(0, 4, footer_txt, align='C')
 
         pdf = PDF()
         pdf.add_page()
         
-        # --- TITRE ---
+        # Titre
         pdf.set_font("Helvetica", 'B', 22)
         pdf.set_text_color(220, 0, 0)
         pdf.cell(0, 15, f"FICHE D'ADOPTION : {str(row['Nom']).upper()}", ln=True, align='C')
         pdf.ln(5)
 
-        # --- PHOTO CENTRÉE ---
+        # Insertion Photo
         try:
             u_photo = format_image_url(row['Photo'])
             resp = requests.get(u_photo, timeout=5)
@@ -79,7 +79,7 @@ def generer_pdf(row):
         except:
             pdf.ln(10)
 
-        # --- INFOS IDENTITÉ ---
+        # Identité
         pdf.set_font("Helvetica", 'B', 14)
         pdf.set_text_color(0, 0, 0)
         pdf.cell(0, 8, f"{row['Espèce']} | {row['Sexe']} | {row['Âge']} ans", ln=True, align='C')
@@ -90,24 +90,24 @@ def generer_pdf(row):
         pdf.cell(0, 6, f"Type / Race : {race_val}", ln=True, align='C')
         pdf.ln(10)
 
-        # --- BLOCS CÔTE À CÔTE (CARACTÈRE & APTITUDES) ---
+        # --- MISE EN PAGE : CARACTÈRE (GAUCHE) & APTITUDES (DROITE) ---
         y_start = pdf.get_y()
         
-        # Bandeaux gris "Boutons"
+        # Bandeaux gris
         pdf.set_fill_color(240, 240, 240)
         pdf.set_font("Helvetica", 'B', 12)
         pdf.cell(90, 10, "  SON CARACTÈRE :", ln=0, fill=True)
         pdf.set_x(110)
         pdf.cell(90, 10, "  APTITUDES :", ln=1, fill=True)
 
-        # Contenu Caractère (Gauche)
+        # Texte Caractère (Gauche)
         pdf.set_y(y_start + 12)
         pdf.set_font("Helvetica", '', 10)
         caractere = str(row.get('Description', 'À venir')).encode('latin-1', 'replace').decode('latin-1')
         pdf.multi_cell(90, 5, caractere, align='L')
         y_caractere_end = pdf.get_y()
         
-        # Contenu Aptitudes (Droite)
+        # Texte Aptitudes (Droite)
         pdf.set_y(y_start + 12)
         pdf.set_x(110)
         pdf.set_font("Helvetica", '', 11)
@@ -118,7 +118,7 @@ def generer_pdf(row):
         pdf.cell(90, 7, f"- OK Enfants : {traduire_bool(row.get('OK_Enfant'))}", ln=1)
         y_aptitudes_end = pdf.get_y()
 
-        # --- BLOC HISTOIRE (EN DESSOUS - PLEINE LARGEUR) ---
+        # --- HISTOIRE (PLEINE LARGEUR) ---
         pdf.set_y(max(y_caractere_end, y_aptitudes_end) + 10)
         pdf.set_fill_color(240, 240, 240)
         pdf.set_font("Helvetica", 'B', 12)
@@ -129,7 +129,7 @@ def generer_pdf(row):
         pdf.multi_cell(0, 5, histoire)
         
         return bytes(pdf.output())
-    except Exception as e:
+    except:
         return None
 
 # --- 3. FONCTION POP-UP ---
@@ -144,20 +144,23 @@ def afficher_evenement(liens):
                 display_url = f"https://drive.google.com/thumbnail?id={doc_id}&sz=w1000"
             else:
                 display_url = url
+                
             st.markdown(f'<div style="text-align: center;"><img src="{display_url}" style="max-height: 70vh; max-width: 100%; border-radius: 10px; box-shadow: 0px 4px 12px rgba(0,0,0,0.15);"></div>', unsafe_allow_html=True)
+            
             if i < len(liste_ordonnee) - 1:
                 st.markdown("""<hr style="border: 0; border-top: 2px solid #ddd; margin: 40px auto; width: 60%;">""", unsafe_allow_html=True)
+                
     st.markdown("### 🐾 Événements à ne pas manquer !")
     if st.button("Découvrir nos boules de poils à l'adoption ✨", use_container_width=True):
         st.rerun()
 
-# --- 4. STYLE VISUEL (APP WEB) ---
+# --- 4. STYLE VISUEL APP ---
 st.markdown(f"""
     <style>
     .stApp {{ background-color: transparent !important; }}
     .logo-overlay {{
         position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
-        width: 70vw; opacity: 0.05; z-index: -1000; pointer-events: none;
+        width: 70vw; opacity: 0.03; z-index: -1000; pointer-events: none;
     }}
     [data-testid="stVerticalBlockBorderWrapper"] {{
         background-color: white !important; border-radius: 15px !important;
@@ -167,6 +170,10 @@ st.markdown(f"""
     h1 {{ color: #FF0000 !important; font-weight: 800; }}
     .btn-contact {{ 
         text-decoration: none !important; color: white !important; background-color: #2e7d32; 
+        padding: 12px; border-radius: 8px; display: block; text-align: center; font-weight: bold; margin-top: 10px;
+    }}
+    .btn-reserve {{ 
+        text-decoration: none !important; color: white !important; background-color: #ff8f00; 
         padding: 12px; border-radius: 8px; display: block; text-align: center; font-weight: bold; margin-top: 10px;
     }}
     .senior-badge {{
@@ -221,7 +228,6 @@ try:
     URL_SHEET = st.secrets["gsheets"]["public_url"]
     df, df_config = load_all_data(URL_SHEET)
 
-    # Gestion Popup
     if not df_config.empty:
         df_config.columns = [str(c).strip() for c in df_config.columns]
         mask = df_config.iloc[:, 0].astype(str).str.contains('Lien_Affiche', na=False, case=False)
@@ -241,7 +247,11 @@ try:
         with c1: choix_espece = st.selectbox("🐶 Espèce", ["Tous"] + sorted(df_dispo['Espèce'].dropna().unique().tolist()))
         with c2: choix_age = st.selectbox("🎂 Tranche d'âge", ["Tous", "Moins d'un an (Junior)", "1 à 5 ans (Jeune Adulte)", "5 à 10 ans (Adulte)", "10 ans et plus (Senior)"])
 
-        st.info("🛡️ **Engagement Santé :** Tous nos protégés sont **vaccinés** et **identifiés** (puce électronique).")
+        if st.button("🔄 Actualiser le catalogue"):
+            st.cache_data.clear()
+            st.rerun()
+
+        st.info("🛡️ **Engagement Santé :** Tous nos protégés sont **vaccinés** et **identifiés** (puce électronique) avant leur départ.")
         
         df_filtre = df_dispo.copy()
         if choix_espece != "Tous": df_filtre = df_filtre[df_filtre['Espèce'] == choix_espece]
@@ -258,7 +268,10 @@ try:
                 with col_txt:
                     st.subheader(row['Nom'])
                     statut = str(row['Statut']).strip()
-                    st.info(f"🏠 {statut}")
+                    if "Urgence" in statut: st.error(f"🚨 {statut}")
+                    elif "Réservé" in statut: st.warning(f"🟠 {statut}")
+                    else: st.info(f"🏠 {statut}")
+                    
                     st.write(f"**{row['Espèce']}** | {row['Sexe']} | **{row['Âge']} ans**")
                     
                     race_display = str(row.get('Race', 'Race non précisée'))
@@ -276,8 +289,27 @@ try:
                     if pdf_data:
                         st.download_button(f"📄 Télécharger la fiche de {row['Nom']}", pdf_data, f"Fiche_{row['Nom']}.pdf", "application/pdf", key=f"pdf_{i}", use_container_width=True)
 
-                    st.markdown(f'<a href="tel:0558736882" class="btn-contact">📞 Appeler le refuge</a>', unsafe_allow_html=True)
+                    if "Réservé" in statut:
+                        st.markdown(f'<div class="btn-reserve">🧡 Animal déjà réservé</div>', unsafe_allow_html=True)
+                    else:
+                        st.markdown(f'<a href="tel:0558736882" class="btn-contact">📞 Appeler le refuge</a>', unsafe_allow_html=True)
+                        st.markdown(f'<a href="mailto:animauxdugranddax@gmail.com?subject=Adoption de {row["Nom"]}" class="btn-contact">📩 Envoyer un Mail</a>', unsafe_allow_html=True)
 
-    st.markdown("""<div class="footer-container"><div style="color:#222; font-size:0.95em;"><b style="color:#FF0000;">Refuge Médéric - Association Animaux du Grand Dax</b><br>182 chemin Lucien Viau, 40990 St-Paul-lès-Dax<br>📞 05 58 73 68 82 | ⏰ 14h-18h (Mer. au Dim.)</div></div>""", unsafe_allow_html=True)
+    # --- 7. PIED DE PAGE COMPLET ---
+    st.markdown("""
+        <div class="footer-container">
+            <div style="color:#222; font-size:0.95em;">
+                <b style="color:#FF0000;">Refuge Médéric - Association Animaux du Grand Dax</b><br>
+                182 chemin Lucien Viau, 40990 St-Paul-lès-Dax<br>
+                📞 05 58 73 68 82 | ⏰ 14h00 - 18h00 (Mercredi au Dimanche)
+            </div>
+            <div style="font-size:0.85em; color:#666; margin-top:15px; padding-top:15px; border-top:1px solid #ddd;">
+                © 2026 - Application officielle du Refuge Médéric<br>
+                🌐 <a href="https://refugedax40.wordpress.com/" target="_blank">Visiter notre site internet</a><br>
+                Développé avec passion pour nos amis à quatre pattes.
+                <div style="font-style: italic; margin-top:5px; font-size:0.8em;">Version 3.5 - Colonnes & Race Support</div>
+            </div>
+        </div>
+    """, unsafe_allow_html=True)
 except Exception as e:
     st.error(f"Erreur de chargement : {e}")
