@@ -27,7 +27,56 @@ st.set_page_config(
     page_icon=f"data:image/png;base64,{logo_b64}" if logo_b64 else "🐾"
 )
 
-# --- 2. FONCTION PDF (OPACITÉ 5% DANS LE PDF) ---
+# --- 2. STYLE CSS (FILIGRANE WEB FIXE 5%) ---
+# On utilise une image en position fixed avec un z-index négatif
+if logo_b64:
+    st.markdown(f"""
+        <style>
+        .watermark {{
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 70vw;
+            opacity: 0.05; /* OPACITÉ 5% */
+            z-index: -1000;
+            pointer-events: none;
+        }}
+        
+        .badge-senior {{
+            background-color: #FFF9C4 !important;
+            color: #856404 !important;
+            padding: 10px;
+            border-radius: 12px;
+            font-weight: bold;
+            text-align: center;
+            border: 2px dashed #FBC02D;
+            margin: 10px 0;
+            display: block;
+            font-size: 0.9em;
+        }}
+
+        .btn-contact {{ 
+            text-decoration: none !important; 
+            color: white !important; 
+            background-color: #2e7d32; 
+            padding: 12px; 
+            border-radius: 8px; 
+            display: block; 
+            text-align: center; 
+            font-weight: bold; 
+            margin-top: 10px; 
+        }}
+        
+        [data-testid="stImage"] img {{
+            border: 5px solid white !important;
+            box-shadow: 0px 4px 10px rgba(0,0,0,0.1) !important;
+        }}
+        </style>
+        <img src="data:image/png;base64,{logo_b64}" class="watermark">
+    """, unsafe_allow_html=True)
+
+# --- 3. FONCTION PDF (OPACITÉ 5% DANS LE PDF) ---
 def traduire_bool(valeur):
     return "OUI" if str(valeur).upper() == "TRUE" else "NON"
 
@@ -48,69 +97,20 @@ def generer_pdf(row):
         pdf.add_page()
         pdf.set_font("Helvetica", 'B', 22)
         pdf.set_text_color(220, 0, 0)
-        pdf.cell(0, 15, f"FICHE : {row['Nom'].upper()}", ln=True, align='C')
+        pdf.cell(0, 15, f"FICHE D'ADOPTION : {row['Nom'].upper()}", ln=True, align='C')
         
         try:
             u_photo = format_image_url(row['Photo'])
-            resp = requests.get(u_photo, timeout=5)
-            pdf.image(BytesIO(resp.content), x=60, y=35, w=90)
+            pdf.image(u_photo, x=60, y=35, w=90)
             pdf.ln(100)
         except: pdf.ln(10)
         
         pdf.set_font("Helvetica", 'B', 14)
-        pdf.set_text_color(0, 0, 0)
         pdf.cell(0, 10, f"{row['Espèce']} | {row['Sexe']} | {row['Âge']} ans", ln=True, align='C')
         return bytes(pdf.output())
     except: return None
 
-# --- 3. STYLE CSS (FILIGRANE 5% SUR LE WEB) ---
-if logo_b64:
-    st.markdown(f"""
-        <style>
-        /* Création d'un fond avec 5% d'opacité qui ne bouge pas au clic */
-        .stApp::before {{
-            content: "";
-            background-image: url("data:image/png;base64,{logo_b64}");
-            background-attachment: fixed;
-            background-size: 60%;
-            background-position: center;
-            background-repeat: no-repeat;
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            opacity: 0.05; /* OPACITÉ 5% ICI */
-            z-index: -1;
-        }}
-
-        .badge-senior {{
-            background-color: #FFF9C4 !important;
-            color: #856404 !important;
-            padding: 12px;
-            border-radius: 12px;
-            font-weight: bold;
-            text-align: center;
-            border: 2px dashed #FBC02D;
-            margin-top: 10px;
-            display: block;
-        }}
-
-        .btn-contact {{ 
-            text-decoration: none !important; 
-            color: white !important; 
-            background-color: #2e7d32; 
-            padding: 12px; 
-            border-radius: 8px; 
-            display: block; 
-            text-align: center; 
-            font-weight: bold; 
-            margin-top: 10px; 
-        }}
-        </style>
-    """, unsafe_allow_html=True)
-
-# --- 4. DATA ET LOGIQUE ---
+# --- 4. CHARGEMENT ET LOGIQUE ---
 @st.cache_data(ttl=60)
 def load_all_data(url):
     try:
@@ -138,6 +138,8 @@ try:
 
     if not df.empty:
         st.title("🐾 Refuge Médéric")
+        st.write("Association Animaux du Grand Dax")
+        
         df_dispo = df[df['Statut'] != "Adopté"]
 
         for i, row in df_dispo.iterrows():
@@ -146,10 +148,11 @@ try:
                 with c1:
                     u = format_image_url(row['Photo'])
                     st.image(u if u.startswith('http') else "https://via.placeholder.com/300", use_container_width=True)
+                    # AFFICHAGE DU BADGE SENIOR
                     if row['Tranche_Age'] == "Senior":
                         st.markdown('<div class="badge-senior">✨ SOS SENIOR : Don Libre</div>', unsafe_allow_html=True)
                 
-                with c2:
+                with col_txt := c2:
                     st.subheader(row['Nom'])
                     st.write(f"**{row['Espèce']}** | {row['Sexe']} | {row['Âge']} ans")
                     
