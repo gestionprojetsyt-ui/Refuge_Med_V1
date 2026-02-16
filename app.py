@@ -197,12 +197,12 @@ try:
                     <div class="aptitude-box">
                         <b style="color:#FF0000; display:block; margin-bottom:8px; font-size:0.9em;">🏠 APTITUDES :</b>
                         <div style="display: flex; align-items: center; margin-bottom: 4px;">
-                            <span style="margin-right: 10px;">🐈</span>
+                            <span style="margin-right: 10px;">🐱</span>
                             <span style="flex-grow: 1; color: #333; font-size: 0.9em;">Ok Chats</span>
                             <span style="color: {check_color(row.get('OK_Chat'))}; font-weight: bold;">{check_ok(row.get('OK_Chat'))}</span>
                         </div>
                         <div style="display: flex; align-items: center; margin-bottom: 4px;">
-                            <span style="margin-right: 10px;">🐕</span>
+                            <span style="margin-right: 10px;">🐶</span>
                             <span style="flex-grow: 1; color: #333; font-size: 0.9em;">Ok Chiens</span>
                             <span style="color: {check_color(row.get('OK_Chien'))}; font-weight: bold;">{check_ok(row.get('OK_Chien'))}</span>
                         </div>
