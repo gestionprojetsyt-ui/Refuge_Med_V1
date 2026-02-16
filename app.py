@@ -28,7 +28,7 @@ st.set_page_config(
     page_icon=f"data:image/png;base64,{logo_b64}" if logo_b64 else "🐾"
 )
 
-# --- 2. FONCTION PDF (MISE EN PAGE COLONNES + BANDES GRISES + RACE) ---
+# --- 2. FONCTION PDF (AVEC MENTION SOS SENIOR) ---
 def traduire_bool(valeur):
     return "OUI" if str(valeur).upper() == "TRUE" else "NON"
 
@@ -66,7 +66,7 @@ def generer_pdf(row):
         pdf.cell(0, 15, f"FICHE D'ADOPTION : {str(row['Nom']).upper()}", ln=True, align='C')
         pdf.ln(5)
 
-        # Insertion Photo
+        # Photo
         try:
             u_photo = format_image_url(row['Photo'])
             resp = requests.get(u_photo, timeout=5)
@@ -75,9 +75,19 @@ def generer_pdf(row):
             img.save(img_buf, format="JPEG")
             img_buf.seek(0)
             pdf.image(img_buf, x=60, y=35, w=90)
-            pdf.ln(100)
+            pdf.ln(92) # On laisse un peu de place pour le badge Senior si besoin
         except:
             pdf.ln(10)
+
+        # MENTION SOS SENIOR DANS LE PDF
+        if row['Tranche_Age'] == "10 ans et plus (Senior)":
+            pdf.set_fill_color(255, 249, 196) # Jaune clair
+            pdf.set_text_color(133, 100, 4)   # Marron foncé
+            pdf.set_font("Helvetica", 'B', 12)
+            pdf.cell(0, 10, "✨ SOS SENIOR : Don Libre", ln=True, align='C', fill=True)
+            pdf.ln(2)
+        else:
+            pdf.ln(8)
 
         # Identité
         pdf.set_font("Helvetica", 'B', 14)
@@ -90,24 +100,20 @@ def generer_pdf(row):
         pdf.cell(0, 6, f"Type / Race : {race_val}", ln=True, align='C')
         pdf.ln(10)
 
-        # --- MISE EN PAGE : CARACTÈRE (GAUCHE) & APTITUDES (DROITE) ---
+        # --- MISE EN PAGE COLONNES ---
         y_start = pdf.get_y()
-        
-        # Bandeaux gris
         pdf.set_fill_color(240, 240, 240)
         pdf.set_font("Helvetica", 'B', 12)
         pdf.cell(90, 10, "  SON CARACTÈRE :", ln=0, fill=True)
         pdf.set_x(110)
         pdf.cell(90, 10, "  APTITUDES :", ln=1, fill=True)
 
-        # Texte Caractère (Gauche)
         pdf.set_y(y_start + 12)
         pdf.set_font("Helvetica", '', 10)
         caractere = str(row.get('Description', 'À venir')).encode('latin-1', 'replace').decode('latin-1')
         pdf.multi_cell(90, 5, caractere, align='L')
-        y_caractere_end = pdf.get_y()
+        y_car_end = pdf.get_y()
         
-        # Texte Aptitudes (Droite)
         pdf.set_y(y_start + 12)
         pdf.set_x(110)
         pdf.set_font("Helvetica", '', 11)
@@ -116,10 +122,10 @@ def generer_pdf(row):
         pdf.cell(90, 7, f"- OK Chiens : {traduire_bool(row.get('OK_Chien'))}", ln=1)
         pdf.set_x(110)
         pdf.cell(90, 7, f"- OK Enfants : {traduire_bool(row.get('OK_Enfant'))}", ln=1)
-        y_aptitudes_end = pdf.get_y()
+        y_apt_end = pdf.get_y()
 
-        # --- HISTOIRE (PLEINE LARGEUR) ---
-        pdf.set_y(max(y_caractere_end, y_aptitudes_end) + 10)
+        # Histoire
+        pdf.set_y(max(y_car_end, y_apt_end) + 10)
         pdf.set_fill_color(240, 240, 240)
         pdf.set_font("Helvetica", 'B', 12)
         pdf.cell(0, 10, "  SON HISTOIRE :", ln=True, fill=True)
@@ -144,12 +150,9 @@ def afficher_evenement(liens):
                 display_url = f"https://drive.google.com/thumbnail?id={doc_id}&sz=w1000"
             else:
                 display_url = url
-                
             st.markdown(f'<div style="text-align: center;"><img src="{display_url}" style="max-height: 70vh; max-width: 100%; border-radius: 10px; box-shadow: 0px 4px 12px rgba(0,0,0,0.15);"></div>', unsafe_allow_html=True)
-            
             if i < len(liste_ordonnee) - 1:
                 st.markdown("""<hr style="border: 0; border-top: 2px solid #ddd; margin: 40px auto; width: 60%;">""", unsafe_allow_html=True)
-                
     st.markdown("### 🐾 Événements à ne pas manquer !")
     if st.button("Découvrir nos boules de poils à l'adoption ✨", use_container_width=True):
         st.rerun()
@@ -251,7 +254,7 @@ try:
             st.cache_data.clear()
             st.rerun()
 
-        st.info("🛡️ **Engagement Santé :** Tous nos protégés sont **vaccinés** et **identifiés** (puce électronique) avant leur départ.")
+        st.info("🛡️ **Engagement Santé :** Tous nos protégés sont **vaccinés** et **identifiés** (puce électronique).")
         
         df_filtre = df_dispo.copy()
         if choix_espece != "Tous": df_filtre = df_filtre[df_filtre['Espèce'] == choix_espece]
@@ -273,9 +276,8 @@ try:
                     else: st.info(f"🏠 {statut}")
                     
                     st.write(f"**{row['Espèce']}** | {row['Sexe']} | **{row['Âge']} ans**")
-                    
                     race_display = str(row.get('Race', 'Race non précisée'))
-                    st.markdown(f'<span class="race-text">📋 Type / Race : {race_display}</span>', unsafe_allow_html=True)
+                    st.markdown(f'<span class="race-text">📍 Type / Race : {race_display}</span>', unsafe_allow_html=True)
 
                     def ck(v): return "✅" if str(v).upper() == "TRUE" else "❌"
                     def cc(v): return "#2e7d32" if str(v).upper() == "TRUE" else "#c62828"
@@ -295,7 +297,7 @@ try:
                         st.markdown(f'<a href="tel:0558736882" class="btn-contact">📞 Appeler le refuge</a>', unsafe_allow_html=True)
                         st.markdown(f'<a href="mailto:animauxdugranddax@gmail.com?subject=Adoption de {row["Nom"]}" class="btn-contact">📩 Envoyer un Mail</a>', unsafe_allow_html=True)
 
-    # --- 7. PIED DE PAGE COMPLET ---
+    # --- 7. PIED DE PAGE ---
     st.markdown("""
         <div class="footer-container">
             <div style="color:#222; font-size:0.95em;">
@@ -307,7 +309,7 @@ try:
                 © 2026 - Application officielle du Refuge Médéric<br>
                 🌐 <a href="https://refugedax40.wordpress.com/" target="_blank">Visiter notre site internet</a><br>
                 Développé avec passion pour nos amis à quatre pattes.
-                <div style="font-style: italic; margin-top:5px; font-size:0.8em;">Version Alpha_2.7 - PDF & Photo Integration</div>
+                <div style="font-style: italic; margin-top:5px; font-size:0.8em;">Version 3.6 - PDF Senior Support</div>
             </div>
         </div>
     """, unsafe_allow_html=True)
