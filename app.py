@@ -131,7 +131,7 @@ st.markdown(f"""
         text-decoration: none !important; color: white !important; background-color: #ff8f00; 
         padding: 12px; border-radius: 8px; display: block; text-align: center; font-weight: bold; margin-top: 10px;
     }}
-    .senior-badge {
+    .senior-badge {{
         background-color: #fffdf0 !important; 
         color: #856404 !important; 
         padding: 8px 15px !important; 
@@ -142,7 +142,7 @@ st.markdown(f"""
         margin: 10px 0 !important;
         display: inline-block !important;
         box-shadow: 2px 2px 5px rgba(0,0,0,0.05) !important;
-    }
+    }}
     [data-testid="stImage"] img {{ 
         border: 8px solid white !important; box-shadow: 0px 4px 10px rgba(0,0,0,0.2) !important;
         height: 320px; object-fit: cover;
