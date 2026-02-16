@@ -131,7 +131,7 @@ st.markdown(f"""
         text-decoration: none !important; color: white !important; background-color: #ff8f00; 
         padding: 12px; border-radius: 8px; display: block; text-align: center; font-weight: bold; margin-top: 10px;
     }}
-/* NOUVEAU BOUTON SOS SENIOR */
+/* NOUVEAU DESIGN DU BOUTON SOS SENIOR */
     .senior-badge {{
         background-color: #fffdf0; 
         color: #856404; 
@@ -143,6 +143,7 @@ st.markdown(f"""
         margin: 10px 0;
         font-size: 0.85em;
         display: inline-block;
+        box-shadow: 2px 2px 5px rgba(0,0,0,0.05);
     }}
     [data-testid="stImage"] img {{ 
         border: 8px solid white !important; box-shadow: 0px 4px 10px rgba(0,0,0,0.2) !important;
