@@ -148,15 +148,23 @@ try:
                     
                     st.write(f"**{row['Espèce']}** | {row['Sexe']} | **{row['Âge']} ans**")
                     
-                    # --- NOUVEAU : BLOC ENTENTES ---
-                    st.markdown(f"""
-                    <div class="entente-box">
-                        <b>🏠 Ententes :</b><br>
-                        🐱 Chats : {row.get('OK_Chat', 'Non précisé')} | 
-                        🐶 Chiens : {row.get('OK_Chien', 'Non précisé')} | 
-                        👶 Enfants : {row.get('OK_Enfant', 'Non précisé')}
-                    </div>
-                    """, unsafe_allow_html=True)
+# --- Remplace la partie "BLOC ENTENTES" dans ton code par celle-ci ---
+
+# On transforme les TRUE/FALSE du Sheet en icônes visuelles
+def get_status_icon(val):
+    if str(val).upper() == "TRUE":
+        return "✅"
+    return "❌"
+
+# Affichage dans la fiche
+st.markdown(f"""
+<div class="entente-box">
+    <b>🏠 Ententes :</b><br>
+    {get_status_icon(row.get('OK_Chat'))} Chats &nbsp;&nbsp;
+    {get_status_icon(row.get('OK_Chien'))} Chiens &nbsp;&nbsp;
+    {get_status_icon(row.get('OK_Enfant'))} Enfants
+</div>
+""", unsafe_allow_html=True)
 
                     t1, t2 = st.tabs(["📖 Histoire", "📋 Caractère"])
                     with t1: st.write(row['Histoire'])
