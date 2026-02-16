@@ -28,7 +28,7 @@ st.set_page_config(
     page_icon=f"data:image/png;base64,{logo_b64}" if logo_b64 else "🐾"
 )
 
-# --- 2. FONCTION PDF CORRIGÉE ---
+# --- 2. FONCTION PDF ---
 def traduire_bool(valeur):
     return "OUI" if str(valeur).upper() == "TRUE" else "NON"
 
@@ -78,8 +78,8 @@ def generer_pdf(row):
         except:
             pdf.ln(10)
 
-        # Mention SOS Senior
-        if str(row['Tranche_Age']) == "10 ans et plus (Senior)":
+        # Mention SOS Senior dans le PDF
+        if "Senior" in str(row['Tranche_Age']):
             pdf.set_fill_color(255, 249, 196)
             pdf.set_text_color(133, 100, 4)
             pdf.set_font("Helvetica", 'B', 12)
@@ -92,23 +92,21 @@ def generer_pdf(row):
         pdf.set_font("Helvetica", 'B', 14)
         pdf.set_text_color(0, 0, 0)
         pdf.cell(0, 8, f"{row['Espèce']} | {row['Sexe']} | {row['Âge']} ans", ln=True, align='C')
-        race_val = str(row.get('Race', 'Race non précisée'))
         pdf.set_font("Helvetica", 'I', 11)
-        pdf.cell(0, 6, f"Type / Race : {race_val}", ln=True, align='C')
+        pdf.cell(0, 6, f"Type / Race : {row.get('Race', 'Non précisée')}", ln=True, align='C')
         pdf.ln(10)
 
-        # Colonnes Caractère / Aptitudes
+        # Mise en page Colonnes
         y_start = pdf.get_y()
         pdf.set_fill_color(240, 240, 240)
         pdf.set_font("Helvetica", 'B', 12)
-        pdf.cell(90, 10, "  SON CARACTÈRE :", ln=0, fill=True)
+        pdf.cell(90, 10, "  SON CARACTERE :", ln=0, fill=True)
         pdf.set_x(110)
         pdf.cell(90, 10, "  APTITUDES :", ln=1, fill=True)
 
         pdf.set_y(y_start + 12)
         pdf.set_font("Helvetica", '', 10)
-        caractere = str(row.get('Description', 'À venir')).encode('latin-1', 'replace').decode('latin-1')
-        pdf.multi_cell(90, 5, caractere, align='L')
+        pdf.multi_cell(90, 5, str(row.get('Description', 'À venir')).encode('latin-1', 'replace').decode('latin-1'))
         y_car_end = pdf.get_y()
         
         pdf.set_y(y_start + 12)
@@ -128,160 +126,84 @@ def generer_pdf(row):
         pdf.cell(0, 10, "  SON HISTOIRE :", ln=True, fill=True)
         pdf.ln(2)
         pdf.set_font("Helvetica", '', 10)
-        histoire = str(row.get('Histoire', 'À venir')).encode('latin-1', 'replace').decode('latin-1')
-        pdf.multi_cell(0, 5, histoire)
+        pdf.multi_cell(0, 5, str(row.get('Histoire', 'À venir')).encode('latin-1', 'replace').decode('latin-1'))
         
         return bytes(pdf.output())
-    except Exception as e:
+    except:
         return None
 
 # --- 3. FONCTION POP-UP ---
 @st.dialog("📢 ÉVÉNEMENTS AU REFUGE", width="large")
 def afficher_evenement(liens):
-    liste_ordonnee = liens[::-1]
-    for i, url in enumerate(liste_ordonnee):
+    for url in liens[::-1]:
         if url:
             if "drive.google.com" in url:
                 doc_id = url.split('id=')[-1].split('&')[0].split('/')[-1]
                 if "/d/" in url: doc_id = url.split('/d/')[1].split('/')[0]
                 display_url = f"https://drive.google.com/thumbnail?id={doc_id}&sz=w1000"
-            else:
-                display_url = url
+            else: display_url = url
             st.markdown(f'<div style="text-align: center;"><img src="{display_url}" style="max-height: 70vh; max-width: 100%; border-radius: 10px; box-shadow: 0px 4px 12px rgba(0,0,0,0.15);"></div>', unsafe_allow_html=True)
-            if i < len(liste_ordonnee) - 1:
-                st.markdown("""<hr style="border: 0; border-top: 2px solid #ddd; margin: 40px auto; width: 60%;">""", unsafe_allow_html=True)
-    st.markdown("### 🐾 Événements à ne pas manquer !")
-    if st.button("Découvrir nos boules de poils à l'adoption ✨", use_container_width=True):
-        st.rerun()
+            st.markdown('<hr style="border: 0; border-top: 2px solid #ddd; margin: 40px auto; width: 60%;">', unsafe_allow_html=True)
+    if st.button("Découvrir nos boules de poils ✨", use_container_width=True): st.rerun()
 
-# --- 4. STYLE VISUEL APP ---
+# --- 4. STYLE VISUEL ---
 st.markdown(f"""
     <style>
     .stApp {{ background-color: transparent !important; }}
-    .logo-overlay {{
-        position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
-        width: 70vw; opacity: 0.03; z-index: -1000; pointer-events: none;
-    }}
     [data-testid="stVerticalBlockBorderWrapper"] {{
         background-color: white !important; border-radius: 15px !important;
         border: 1px solid #ddd !important; box-shadow: 0px 4px 12px rgba(0,0,0,0.08) !important;
         padding: 20px !important; margin-bottom: 20px !important;
     }}
-    h1 {{ color: #FF0000 !important; font-weight: 800; }}
-    .btn-contact {{ 
-        text-decoration: none !important; color: white !important; background-color: #2e7d32; 
-        padding: 12px; border-radius: 8px; display: block; text-align: center; font-weight: bold; margin-top: 10px;
-    }}
-    .btn-reserve {{ 
-        text-decoration: none !important; color: white !important; background-color: #ff8f00; 
-        padding: 12px; border-radius: 8px; display: block; text-align: center; font-weight: bold; margin-top: 10px;
-    }}
-    .senior-badge {{
-        background-color: #FFF9C4 !important; color: #856404 !important; padding: 10px 15px !important; 
-        border-radius: 20px !important; font-weight: bold !important; text-align: center !important; 
-        border: none !important; margin: 15px auto !important; display: block !important;
-        box-shadow: 0px 2px 5px rgba(0,0,0,0.1) !important; font-size: 0.9em !important; max-width: 90%;
-    }}
-    [data-testid="stImage"] img {{ 
-        border: 8px solid white !important; box-shadow: 0px 4px 10px rgba(0,0,0,0.2) !important;
-        height: 320px; object-fit: cover;
-    }}
-    .footer-container {{
-        background-color: white; padding: 25px; border-radius: 15px; margin-top: 50px;
-        text-align: center; border: 2px solid #FF0000;
-    }}
-    .aptitude-box {{
-        background-color: #f8f9fa; padding: 12px; border-radius: 8px; 
-        border-left: 5px solid #FF0000; margin: 15px 0; border: 1px solid #eee;
-    }}
-    .race-text {{ color: #555; font-style: italic; font-size: 0.95em; margin-bottom: 10px; display: block; }}
+    .btn-contact {{ text-decoration: none !important; color: white !important; background-color: #2e7d32; padding: 12px; border-radius: 8px; display: block; text-align: center; font-weight: bold; margin-top: 10px; }}
+    .senior-badge {{ background-color: #FFF9C4 !important; color: #856404 !important; padding: 10px 15px !important; border-radius: 20px !important; font-weight: bold !important; text-align: center !important; margin: 15px auto !important; display: block !important; max-width: 90%; }}
+    [data-testid="stImage"] img {{ border: 8px solid white !important; box-shadow: 0px 4px 10px rgba(0,0,0,0.2) !important; height: 320px; object-fit: cover; }}
+    .aptitude-box {{ background-color: #f8f9fa; padding: 12px; border-radius: 8px; border-left: 5px solid #FF0000; margin: 15px 0; border: 1px solid #eee; }}
     </style>
-    <img src="data:image/png;base64,{logo_b64 if logo_b64 else ''}" class="logo-overlay">
     """, unsafe_allow_html=True)
 
-# --- 5. FONCTIONS DATA ---
+# --- 5. DATA ---
 @st.cache_data(ttl=60)
 def load_all_data(url):
     try:
-        base_url = url.split('/edit')[0]
-        csv_url = url.replace('/edit?usp=sharing', '/export?format=csv').replace('/edit#gid=', '/export?format=csv&gid=')
-        df = pd.read_csv(csv_url, engine='c', low_memory=False)
-        df_config = pd.DataFrame()
-        try:
-            df_config = pd.read_csv(f"{base_url}/gviz/tq?tqx=out:csv&sheet=Config")
-        except: pass
-        def categoriser_age(age):
+        csv_url = url.replace('/edit?usp=sharing', '/export?format=csv')
+        df = pd.read_csv(csv_url)
+        def cat_age(age):
             try:
-                age = float(str(age).replace(',', '.'))
-                if age < 1: return "Moins d'un an (Junior)"
-                elif 1 <= age <= 5: return "1 à 5 ans (Jeune Adulte)"
-                elif 5 < age < 10: return "5 à 10 ans (Adulte)"
-                else: return "10 ans et plus (Senior)"
+                a = float(str(age).replace(',', '.'))
+                if a >= 10: return "10 ans et plus (Senior)"
+                return "Autre"
             except: return "Non précisé"
-        df['Tranche_Age'] = df['Âge'].apply(categoriser_age)
-        return df, df_config
-    except: return pd.DataFrame(), pd.DataFrame()
+        df['Tranche_Age'] = df['Âge'].apply(cat_age)
+        return df
+    except: return pd.DataFrame()
 
-# --- 6. INTERFACE PRINCIPALE ---
+# --- 6. INTERFACE ---
 try:
     URL_SHEET = st.secrets["gsheets"]["public_url"]
-    df, df_config = load_all_data(URL_SHEET)
-
-    if not df_config.empty:
-        df_config.columns = [str(c).strip() for c in df_config.columns]
-        mask = df_config.iloc[:, 0].astype(str).str.contains('Lien_Affiche', na=False, case=False)
-        lignes_ev = df_config[mask]
-        if not lignes_ev.empty and "popup_vue" not in st.session_state:
-            liens_valides = [str(r.iloc[1]).strip() for _, r in lignes_ev.iterrows() if str(r.iloc[1]).strip() != "nan" and "http" in str(r.iloc[1])]
-            if liens_valides:
-                st.session_state.popup_vue = True
-                afficher_evenement(liens_valides)
+    df = load_all_data(URL_SHEET)
 
     if not df.empty:
         df_dispo = df[df['Statut'] != "Adopté"].copy()
         st.title("🐾 Refuge Médéric")
-        st.markdown("#### Association Animaux du Grand Dax")
-
-        c1, c2 = st.columns(2)
-        with c1: choix_espece = st.selectbox("🐶 Espèce", ["Tous"] + sorted(df_dispo['Espèce'].dropna().unique().tolist()))
-        with c2: choix_age = st.selectbox("🎂 Tranche d'âge", ["Tous", "Moins d'un an (Junior)", "1 à 5 ans (Jeune Adulte)", "5 à 10 ans (Adulte)", "10 ans et plus (Senior)"])
-
-        if st.button("🔄 Actualiser le catalogue"):
-            st.cache_data.clear()
-            st.rerun()
-
-        df_filtre = df_dispo.copy()
-        if choix_espece != "Tous": df_filtre = df_filtre[df_filtre['Espèce'] == choix_espece]
-        if choix_age != "Tous": df_filtre = df_filtre[df_filtre['Tranche_Age'] == choix_age]
-
-        for i, row in df_filtre.iterrows():
+        
+        for i, row in df_dispo.iterrows():
             with st.container(border=True):
-                col_img, col_txt = st.columns([1, 1.2])
-                with col_img:
-                    u_photo = format_image_url(row['Photo'])
-                    st.image(u_photo if u_photo.startswith('http') else "https://via.placeholder.com/300", use_container_width=True)
-                    if row['Tranche_Age'] == "10 ans et plus (Senior)":
+                col1, col2 = st.columns([1, 1.2])
+                with col1:
+                    st.image(format_image_url(row['Photo']), use_container_width=True)
+                    if "Senior" in str(row['Tranche_Age']):
                         st.markdown('<div class="senior-badge">✨ SOS SENIOR : Don Libre</div>', unsafe_allow_html=True)
-                with col_txt:
+                with col2:
                     st.subheader(row['Nom'])
-                    statut = str(row['Statut']).strip()
-                    if "Urgence" in statut: st.error(f"🚨 {statut}")
-                    elif "Réservé" in statut: st.warning(f"🟠 {statut}")
-                    else: st.info(f"🏠 {statut}")
-                    
                     st.write(f"**{row['Espèce']}** | {row['Sexe']} | **{row['Âge']} ans**")
-                    race_display = str(row.get('Race', 'Race non précisée'))
-                    st.markdown(f'<span class="race-text">📍 Type / Race : {race_display}</span>', unsafe_allow_html=True)
-
-                    def ck(v): return "✅" if str(v).upper() == "TRUE" else "❌"
-                    def cc(v): return "#2e7d32" if str(v).upper() == "TRUE" else "#c62828"
-                    st.markdown(f'<div class="aptitude-box"><b style="color:#FF0000; font-size:0.9em;">🏠 APTITUDES :</b><br><span style="color:{cc(row.get("OK_Chat"))}">🐱 Ok Chats : {ck(row.get("OK_Chat"))}</span><br><span style="color:{cc(row.get("OK_Chien"))}">🐶 Ok Chiens : {ck(row.get("OK_Chien"))}</span><br><span style="color:{cc(row.get("OK_Enfant"))}">🧒 Ok Enfants : {ck(row.get("OK_Enfant"))}</span></div>', unsafe_allow_html=True)
+                    st.markdown(f'<div class="aptitude-box"><b>🏠 APTITUDES :</b><br>🐱 Chats : {"✅" if str(row.get("OK_Chat")).upper()=="TRUE" else "❌"}<br>🐶 Chiens : {"✅" if str(row.get("OK_Chien")).upper()=="TRUE" else "❌"}</div>', unsafe_allow_html=True)
 
                     t1, t2 = st.tabs(["📖 Histoire", "📋 Caractère"])
                     with t1: st.write(row['Histoire'])
                     with t2: st.write(row['Description'])
                     
-                    # GENERATION PDF
+                    # BOUTON PDF (Sorti de toute condition pour être sûr qu'il s'affiche)
                     pdf_bytes = generer_pdf(row)
                     if pdf_bytes:
                         st.download_button(
@@ -289,30 +211,11 @@ try:
                             data=pdf_bytes,
                             file_name=f"Fiche_{row['Nom']}.pdf",
                             mime="application/pdf",
-                            key=f"pdf_btn_{i}",
+                            key=f"pdf_fin_{i}",
                             use_container_width=True
                         )
+                    
+                    st.markdown(f'<a href="tel:0558736882" class="btn-contact">📞 Appeler le refuge</a>', unsafe_allow_html=True)
 
-                    if "Réservé" in statut:
-                        st.markdown(f'<div class="btn-reserve">🧡 Animal déjà réservé</div>', unsafe_allow_html=True)
-                    else:
-                        st.markdown(f'<a href="tel:0558736882" class="btn-contact">📞 Appeler le refuge</a>', unsafe_allow_html=True)
-                        st.markdown(f'<a href="mailto:animauxdugranddax@gmail.com?subject=Adoption de {row["Nom"]}" class="btn-contact">📩 Envoyer un Mail</a>', unsafe_allow_html=True)
-
-    # --- 7. PIED DE PAGE ---
-    st.markdown("""
-        <div class="footer-container">
-            <div style="color:#222; font-size:0.95em;">
-                <b style="color:#FF0000;">Refuge Médéric - Association Animaux du Grand Dax</b><br>
-                182 chemin Lucien Viau, 40990 St-Paul-lès-Dax<br>
-                📞 05 58 73 68 82 | ⏰ 14h00 - 18h00 (Mercredi au Dimanche)
-            </div>
-            <div style="font-size:0.85em; color:#666; margin-top:15px; padding-top:15px; border-top:1px solid #ddd;">
-                © 2026 - Application officielle du Refuge Médéric<br>
-                🌐 <a href="https://refugedax40.wordpress.com/" target="_blank">Visiter notre site internet</a><br>
-                <div style="font-style: italic; margin-top:5px; font-size:0.8em;">Version 3.7 - Correction PDF Senior</div>
-            </div>
-        </div>
-    """, unsafe_allow_html=True)
 except Exception as e:
     st.error(f"Erreur : {e}")
