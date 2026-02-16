@@ -131,6 +131,8 @@ st.markdown(f"""
         text-decoration: none !important; color: white !important; background-color: #ff8f00; 
         padding: 12px; border-radius: 8px; display: block; text-align: center; font-weight: bold; margin-top: 10px;
     }}
+    
+    /* STYLE SOS SENIOR CORRIGÉ */
     .senior-badge {{
         background-color: #fffdf0 !important; 
         color: #856404 !important; 
@@ -142,7 +144,9 @@ st.markdown(f"""
         margin: 10px 0 !important;
         display: inline-block !important;
         box-shadow: 2px 2px 5px rgba(0,0,0,0.05) !important;
+        font-size: 0.9em !important;
     }}
+
     [data-testid="stImage"] img {{ 
         border: 8px solid white !important; box-shadow: 0px 4px 10px rgba(0,0,0,0.2) !important;
         height: 320px; object-fit: cover;
@@ -239,18 +243,20 @@ try:
 
         st.write(f"**{len(df_filtre)}** protégé(s) à l'adoption")
 
-        for _, row in df_filtre.iterrows():
+        for i, row in df_filtre.iterrows():
             with st.container(border=True):
                 col_img, col_txt = st.columns([1, 1.2])
                 with col_img:
                     u_photo = format_image_url(row['Photo'])
                     st.image(u_photo if u_photo.startswith('http') else "https://via.placeholder.com/300", use_container_width=True)
 
-                    if row['Tranche_Age'] == "10 ans et plus (Senior)":
-                        st.markdown('<div class="senior-tag">🎁 SOS Senior : Don Libre</div>', unsafe_allow_html=True)   
-
                 with col_txt:
                     st.subheader(row['Nom'])
+                    
+                    # AFFICHAGE DU BADGE SENIOR CORRIGÉ (JUSTE SOUS LE NOM)
+                    if row['Tranche_Age'] == "10 ans et plus (Senior)":
+                        st.markdown('<div class="senior-badge">✨ SOS SENIOR : Don Libre</div>', unsafe_allow_html=True)
+
                     statut = str(row['Statut']).strip()
                     if "Urgence" in statut: st.error(f"🚨 {statut}")
                     elif "Réservé" in statut: st.warning(f"🟠 {statut}")
@@ -288,7 +294,7 @@ try:
                     with t1: st.write(row['Histoire'])
                     with t2: st.write(row['Description'])
                     
-                    # Bouton PDF avec la photo intégrée
+                    # Bouton PDF avec clé unique pour éviter les erreurs d'ID
                     pdf_data = generer_pdf(row)
                     if pdf_data:
                         st.download_button(
@@ -296,6 +302,7 @@ try:
                             data=pdf_data,
                             file_name=f"Fiche_{row['Nom']}.pdf",
                             mime="application/pdf",
+                            key=f"pdf_btn_{i}",
                             use_container_width=True
                         )
 
