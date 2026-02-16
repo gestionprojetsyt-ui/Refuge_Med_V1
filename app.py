@@ -28,7 +28,6 @@ st.set_page_config(
 )
 
 # --- 2. STYLE CSS (FILIGRANE WEB FIXE 5%) ---
-# On utilise une image en position fixed avec un z-index négatif
 if logo_b64:
     st.markdown(f"""
         <style>
@@ -38,7 +37,7 @@ if logo_b64:
             left: 50%;
             transform: translate(-50%, -50%);
             width: 70vw;
-            opacity: 0.05; /* OPACITÉ 5% */
+            opacity: 0.05;
             z-index: -1000;
             pointer-events: none;
         }}
@@ -51,7 +50,7 @@ if logo_b64:
             font-weight: bold;
             text-align: center;
             border: 2px dashed #FBC02D;
-            margin: 10px 0;
+            margin-top: 10px;
             display: block;
             font-size: 0.9em;
         }}
@@ -66,11 +65,6 @@ if logo_b64:
             text-align: center; 
             font-weight: bold; 
             margin-top: 10px; 
-        }}
-        
-        [data-testid="stImage"] img {{
-            border: 5px solid white !important;
-            box-shadow: 0px 4px 10px rgba(0,0,0,0.1) !important;
         }}
         </style>
         <img src="data:image/png;base64,{logo_b64}" class="watermark">
@@ -97,7 +91,7 @@ def generer_pdf(row):
         pdf.add_page()
         pdf.set_font("Helvetica", 'B', 22)
         pdf.set_text_color(220, 0, 0)
-        pdf.cell(0, 15, f"FICHE D'ADOPTION : {row['Nom'].upper()}", ln=True, align='C')
+        pdf.cell(0, 15, f"FICHE D'ADOPTION : {str(row['Nom']).upper()}", ln=True, align='C')
         
         try:
             u_photo = format_image_url(row['Photo'])
@@ -106,11 +100,12 @@ def generer_pdf(row):
         except: pdf.ln(10)
         
         pdf.set_font("Helvetica", 'B', 14)
+        pdf.set_text_color(0, 0, 0)
         pdf.cell(0, 10, f"{row['Espèce']} | {row['Sexe']} | {row['Âge']} ans", ln=True, align='C')
         return bytes(pdf.output())
     except: return None
 
-# --- 4. CHARGEMENT ET LOGIQUE ---
+# --- 4. DATA ---
 @st.cache_data(ttl=60)
 def load_all_data(url):
     try:
@@ -138,8 +133,6 @@ try:
 
     if not df.empty:
         st.title("🐾 Refuge Médéric")
-        st.write("Association Animaux du Grand Dax")
-        
         df_dispo = df[df['Statut'] != "Adopté"]
 
         for i, row in df_dispo.iterrows():
@@ -148,19 +141,19 @@ try:
                 with c1:
                     u = format_image_url(row['Photo'])
                     st.image(u if u.startswith('http') else "https://via.placeholder.com/300", use_container_width=True)
-                    # AFFICHAGE DU BADGE SENIOR
                     if row['Tranche_Age'] == "Senior":
                         st.markdown('<div class="badge-senior">✨ SOS SENIOR : Don Libre</div>', unsafe_allow_html=True)
                 
-                with col_txt := c2:
+                with c2:
                     st.subheader(row['Nom'])
                     st.write(f"**{row['Espèce']}** | {row['Sexe']} | {row['Âge']} ans")
                     
                     pdf = generer_pdf(row)
                     if pdf:
-                        st.download_button(f"📄 Fiche de {row['Nom']}", pdf, f"{row['Nom']}.pdf", "application/pdf", key=f"btn_{i}", use_container_width=True)
+                        # On utilise l'index 'i' pour garantir une clé unique par bouton
+                        st.download_button(f"📄 Fiche de {row['Nom']}", pdf, f"{row['Nom']}.pdf", "application/pdf", key=f"dl_{i}")
                     
                     st.markdown(f'<a href="tel:0558736882" class="btn-contact">📞 Appeler le refuge</a>', unsafe_allow_html=True)
 
 except Exception as e:
-    st.error(f"Erreur : {e}")
+    st.error(f"Erreur d'exécution : {e}")
