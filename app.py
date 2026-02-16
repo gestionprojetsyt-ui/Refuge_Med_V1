@@ -131,10 +131,18 @@ st.markdown(f"""
         text-decoration: none !important; color: white !important; background-color: #ff8f00; 
         padding: 12px; border-radius: 8px; display: block; text-align: center; font-weight: bold; margin-top: 10px;
     }}
-    .senior-tag {{
-        background-color: #fce4ec; color: #c2185b; padding: 10px; border-radius: 8px;
-        font-weight: bold; font-size: 0.95em; border: 2px dashed #f06292;
-        display: block; text-align: center; margin-top: 10px;
+/* NOUVEAU BOUTON SOS SENIOR */
+    .senior-badge {{
+        background-color: #fffdf0; 
+        color: #856404; 
+        padding: 6px 15px; 
+        border-radius: 20px; 
+        font-weight: bold; 
+        text-align: center; 
+        border: 2px dashed #ffeeba; 
+        margin: 10px 0;
+        font-size: 0.85em;
+        display: inline-block;
     }}
     [data-testid="stImage"] img {{ 
         border: 8px solid white !important; box-shadow: 0px 4px 10px rgba(0,0,0,0.2) !important;
