@@ -28,7 +28,7 @@ st.set_page_config(
     page_icon=f"data:image/png;base64,{logo_b64}" if logo_b64 else "🐾"
 )
 
-# --- 2. FONCTION PDF (AVEC FILIGRANE 5% & PHOTO) ---
+# --- 2. FONCTION PDF (FILIGRANE 5% & PIED DE PAGE SITE) ---
 def traduire_bool(valeur):
     return "OUI" if str(valeur).upper() == "TRUE" else "NON"
 
@@ -36,11 +36,20 @@ def generer_pdf(row):
     try:
         class PDF(FPDF):
             def header(self):
-                # FILIGRANE 5% DANS LE PDF
+                # FILIGRANE DU PDF (Logo centré à 5% d'opacité)
                 try:
                     with self.local_context(fill_opacity=0.05):
                         self.image(URL_LOGO_HD, x=45, y=80, w=120)
-                except: pass
+                except:
+                    pass
+
+            def footer(self):
+                # PIED DE PAGE DU PDF
+                self.set_y(-15)
+                self.set_font("Helvetica", 'I', 8)
+                self.set_text_color(128)
+                infos_footer = "Refuge Médéric - 182 chemin Lucien Viau, 40990 St-Paul-lès-Dax | 05 58 73 68 82\nSite web : https://refugedax40.wordpress.com/"
+                self.multi_cell(0, 4, infos_footer, align='C')
 
         pdf = PDF()
         pdf.add_page()
@@ -123,7 +132,7 @@ st.markdown(f"""
     .stApp {{ background-color: transparent !important; }}
     .logo-overlay {{
         position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
-        width: 70vw; opacity: 0.04; z-index: -1; pointer-events: none;
+        width: 70vw; opacity: 0.05; z-index: -1000; pointer-events: none;
     }}
     [data-testid="stVerticalBlockBorderWrapper"] {{
         background-color: white !important; border-radius: 15px !important;
@@ -148,7 +157,7 @@ st.markdown(f"""
         border-radius: 20px !important; 
         font-weight: bold !important; 
         text-align: center !important; 
-        border: none !important; /* SUPPRESSION DES POINTILLÉS */
+        border: none !important; 
         margin: 15px auto !important;
         display: block !important;
         box-shadow: 0px 2px 5px rgba(0,0,0,0.1) !important;
@@ -331,7 +340,7 @@ try:
                 © 2026 - Application officielle du Refuge Médéric<br>
                 🌐 <a href="https://refugedax40.wordpress.com/" target="_blank">Visiter notre site internet</a><br>
                 Développé par Firnaeth. avec passion pour nos amis à quatre pattes.
-                <div class="version-note">Version Alpha_2.1 - PDF & Photo Integration</div>
+                <div class="version-note">Version 3.2 - PDF & Photo Integration</div>
             </div>
         </div>
     """, unsafe_allow_html=True)
