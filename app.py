@@ -106,7 +106,6 @@ try:
     URL_SHEET = st.secrets["gsheets"]["public_url"]
     df, df_config = load_all_data(URL_SHEET)
 
-    # Logique Pop-up
     if not df_config.empty:
         mask = df_config.iloc[:, 0].astype(str).str.contains('Lien_Affiche', na=False, case=False)
         lignes_ev = df_config[mask]
@@ -119,27 +118,19 @@ try:
     if not df.empty:
         df_dispo = df[df['Statut'] != "Adopté"].copy()
         st.title("🐾 Refuge Médéric")
-        st.markdown("#### Association Animaux du Grand Dax")
-
-        # Filtres
+        
         c1, c2 = st.columns(2)
         with c1: choix_espece = st.selectbox("🐶 Espèce", ["Tous"] + sorted(df_dispo['Espèce'].dropna().unique().tolist()))
         with c2: choix_age = st.selectbox("🎂 Tranche d'âge", ["Tous", "Moins d'un an (Junior)", "1 à 5 ans (Jeune Adulte)", "5 à 10 ans (Adulte)", "10 ans et plus (Senior)"])
 
-        # Bouton Actualiser
         if st.button("🔄 Actualiser le catalogue"):
             st.cache_data.clear()
             st.rerun()
 
-        st.info("🛡️ **Engagement Santé :** Tous nos protégés sont **vaccinés** et **identifiés** (puce électronique) avant leur départ.")
-        
         df_filtre = df_dispo.copy()
         if choix_espece != "Tous": df_filtre = df_filtre[df_filtre['Espèce'] == choix_espece]
         if choix_age != "Tous": df_filtre = df_filtre[df_filtre['Tranche_Age'] == choix_age]
 
-        st.write(f"**{len(df_filtre)}** protégé(s) à l'adoption")
-
-        # Boucle des animaux
         for _, row in df_filtre.iterrows():
             with st.container(border=True):
                 col_img, col_txt = st.columns([1, 1.2])
@@ -149,36 +140,35 @@ try:
                 with col_txt:
                     st.subheader(row['Nom'])
                     
-                    # Badge Senior
                     if row['Tranche_Age'] == "10 ans et plus (Senior)":
                         st.markdown('<div class="senior-tag">🎁 SOS Senior : Don Libre</div>', unsafe_allow_html=True)
                     
                     st.write(f"**{row['Espèce']}** | {row['Sexe']} | **{row['Âge']} ans**")
                     
-                    # --- SYSTÈME D'ICÔNES POUR LES ENTENTES ---
-                    def get_status_ui(val, label, icon_url):
+                    # --- FONCTION D'AFFICHAGE APTITUDES (CORRIGÉE) ---
+                    def build_aptitude_row(val, label, icon_url):
                         is_ok = str(val).upper() == "TRUE"
-                        color = "#2e7d32" if is_ok else "#c62828"
+                        status_color = "#2e7d32" if is_ok else "#c62828"
                         status_icon = "✅" if is_ok else "❌"
-                        opacity = "1" if is_ok else "0.5"
                         return f"""
-                        <div style="display: flex; align-items: center; margin-bottom: 5px; opacity: {opacity};">
-                            <img src="{icon_url}" width="22" style="margin-right: 10px;">
-                            <span style="flex-grow: 1; font-weight: 500; color: #333;">{label}</span>
-                            <span style="font-weight: bold; color: {color}; font-size: 1.1em;">{status_icon}</span>
+                        <div style="display: flex; align-items: center; margin-bottom: 6px;">
+                            <img src="{icon_url}" width="22" style="margin-right: 12px;">
+                            <span style="flex-grow: 1; color: #333; font-weight: 500;">{label}</span>
+                            <span style="color: {status_color}; font-weight: bold;">{status_icon}</span>
                         </div>
                         """
-                    
+
                     icon_cat = "https://cdn-icons-png.flaticon.com/512/620/620851.png"
                     icon_dog = "https://cdn-icons-png.flaticon.com/512/620/620885.png"
                     icon_kid = "https://cdn-icons-png.flaticon.com/512/167/167750.png"
 
+                    # L'élément CRUCIAL : unsafe_allow_html=True
                     st.markdown(f"""
-                    <div style="background-color: #f8f9fa; padding: 12px; border-radius: 12px; border: 1px solid #eee; margin: 10px 0;">
-                        <b style="color:#FF0000; display:block; margin-bottom:8px; font-size:0.9em;">🏠 APTITUDES :</b>
-                        {get_status_ui(row.get('OK_Chat'), "Ok Chats", icon_cat)}
-                        {get_status_ui(row.get('OK_Chien'), "Ok Chiens", icon_dog)}
-                        {get_status_ui(row.get('OK_Enfant'), "Ok Enfants", icon_kid)}
+                    <div style="background-color: #f8f9fa; padding: 12px; border-radius: 12px; border: 1px solid #eee; margin: 15px 0;">
+                        <b style="color:#FF0000; display:block; margin-bottom:10px; font-size:0.9em;">🏠 APTITUDES :</b>
+                        {build_aptitude_row(row.get('OK_Chat'), "Ok Chats", icon_cat)}
+                        {build_aptitude_row(row.get('OK_Chien'), "Ok Chiens", icon_dog)}
+                        {build_aptitude_row(row.get('OK_Enfant'), "Ok Enfants", icon_kid)}
                     </div>
                     """, unsafe_allow_html=True)
 
@@ -188,10 +178,8 @@ try:
                     
                     st.markdown(f'<a href="tel:0558736882" class="btn-contact">📞 Appeler le refuge</a>', unsafe_allow_html=True)
 
-    # --- PIED DE PAGE ---
     st.markdown("""<div style="text-align:center; padding:20px; border-top:2px solid #FF0000; margin-top:30px; background-color:white; border-radius:15px;">
-    <b style="color:#FF0000;">Refuge Médéric - Association Animaux du Grand Dax</b><br>
-    182 chemin Lucien Viau, 40990 St-Paul-lès-Dax</div>""", unsafe_allow_html=True)
+    <b style="color:#FF0000;">Refuge Médéric - Association Animaux du Grand Dax</b></div>""", unsafe_allow_html=True)
 
 except Exception as e:
     st.error(f"Erreur : {e}")
