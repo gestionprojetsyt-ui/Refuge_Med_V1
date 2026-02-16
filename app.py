@@ -22,80 +22,117 @@ def get_base64_image(url):
 logo_b64 = get_base64_image(URL_LOGO_HD)
 
 st.set_page_config(
-    page_title="Refuge Médéric", 
+    page_title="Refuge Médéric - Association Animaux du Grand Dax", 
     layout="centered", 
     page_icon=f"data:image/png;base64,{logo_b64}" if logo_b64 else "🐾"
 )
 
-# --- 2. STYLE CSS FORCE (LOGO EN FOND FIXE 5%) ---
-# Cette partie utilise le fond de l'application elle-même pour éviter qu'il disparaisse
-if logo_b64:
-    st.markdown(f"""
-        <style>
-        /* On injecte le logo directement dans le conteneur principal de Streamlit */
-        [data-testid="stAppViewContainer"]::before {{
-            content: "";
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            width: 80vw;
-            height: 80vh;
-            background-image: url("data:image/png;base64,{logo_b64}");
-            background-repeat: no-repeat;
-            background-position: center;
-            background-size: contain;
-            opacity: 0.05; /* 5% d'opacité */
-            z-index: -1;
-            pointer-events: none;
-        }}
+# --- 2. FONCTION PDF (FILIGRANE 5% DANS LE DOCUMENT) ---
+def traduire_bool(valeur):
+    return "OUI" if str(valeur).upper() == "TRUE" else "NON"
 
-        /* Suppression des pointillés du badge senior */
-        .badge-senior {{
-            background-color: #FFF9C4 !important;
-            color: #856404 !important;
-            padding: 10px;
-            border-radius: 12px;
-            font-weight: bold;
-            text-align: center;
-            border: none !important; /* AUCUN POINTILLÉ */
-            margin-top: 10px;
-            display: block;
-            box-shadow: 0px 2px 5px rgba(0,0,0,0.05);
-        }}
-
-        .btn-contact {{ 
-            text-decoration: none !important; 
-            color: white !important; 
-            background-color: #2e7d32; 
-            padding: 12px; 
-            border-radius: 8px; 
-            display: block; 
-            text-align: center; 
-            font-weight: bold; 
-            margin-top: 10px; 
-        }}
-        </style>
-    """, unsafe_allow_html=True)
-
-# --- 3. FONCTION PDF ---
 def generer_pdf(row):
     try:
         class PDF(FPDF):
             def header(self):
+                # FILIGRANE DU PDF A 5%
                 try:
                     with self.local_context(fill_opacity=0.05):
+                        # Positionné au centre de la page
                         self.image(URL_LOGO_HD, x=45, y=80, w=120)
                 except: pass
+
+            def footer(self):
+                self.set_y(-15)
+                self.set_font("Helvetica", 'I', 8)
+                self.set_text_color(128)
+                self.cell(0, 10, "Refuge Médéric - 182 chemin Lucien Viau, 40990 St-Paul-lès-Dax - 05 58 73 68 82", 0, 0, 'C')
+
         pdf = PDF()
         pdf.add_page()
+        
+        # Titre
         pdf.set_font("Helvetica", 'B', 22)
         pdf.set_text_color(220, 0, 0)
-        pdf.cell(0, 15, f"FICHE : {str(row['Nom']).upper()}", ln=True, align='C')
+        pdf.cell(0, 15, f"RENCONTREZ {str(row['Nom']).upper()}", ln=True, align='C')
+        pdf.ln(5)
+
+        # Photo centrale
+        try:
+            u_photo = format_image_url(row['Photo'])
+            resp = requests.get(u_photo, timeout=5)
+            pdf.image(BytesIO(resp.content), x=60, y=35, w=90)
+            pdf.ln(100)
+        except: pdf.ln(10)
+
+        # Infos
+        pdf.set_font("Helvetica", 'B', 14)
+        pdf.set_text_color(0, 0, 0)
+        pdf.cell(0, 10, f"{row['Espèce']} | {row['Sexe']} | {row['Âge']} ans", ln=True, align='C')
+        
+        # Bloc Aptitudes
+        pdf.ln(5)
+        pdf.set_fill_color(240, 240, 240)
+        pdf.set_font("Helvetica", 'B', 12)
+        pdf.cell(0, 10, "  SES APTITUDES :", ln=True, fill=True)
+        pdf.set_font("Helvetica", '', 11)
+        pdf.cell(0, 8, f"   - OK Chats : {traduire_bool(row.get('OK_Chat'))}", ln=True)
+        pdf.cell(0, 8, f"   - OK Chiens : {traduire_bool(row.get('OK_Chien'))}", ln=True)
+        pdf.cell(0, 8, f"   - OK Enfants : {traduire_bool(row.get('OK_Enfant'))}", ln=True)
+        
         return bytes(pdf.output())
     except: return None
 
-# --- 4. CHARGEMENT DONNÉES ---
+# --- 3. STYLE CSS (APP WEB & BADGE SANS POINTILLÉS) ---
+st.markdown(f"""
+    <style>
+    /* Filigrane Web stable à 5% */
+    .watermark {{
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 75vw;
+        opacity: 0.05;
+        z-index: -1000;
+        pointer-events: none;
+    }}
+    
+    /* Badge Senior SANS pointillés */
+    .badge-senior {{
+        background-color: #FFF9C4 !important;
+        color: #856404 !important;
+        padding: 10px;
+        border-radius: 12px;
+        font-weight: bold;
+        text-align: center;
+        border: none !important;
+        margin-top: 10px;
+        display: block;
+        box-shadow: 0px 2px 5px rgba(0,0,0,0.05);
+    }}
+
+    .btn-contact {{ 
+        text-decoration: none !important; 
+        color: white !important; 
+        background-color: #2e7d32; 
+        padding: 12px; 
+        border-radius: 8px; 
+        display: block; 
+        text-align: center; 
+        font-weight: bold; 
+        margin-top: 10px; 
+    }}
+
+    [data-testid="stImage"] img {{ 
+        border: 5px solid white !important; 
+        box-shadow: 0px 4px 10px rgba(0,0,0,0.1) !important; 
+    }}
+    </style>
+    <img src="data:image/png;base64,{logo_b64 if logo_b64 else ''}" class="watermark">
+""", unsafe_allow_html=True)
+
+# --- 4. CHARGEMENT DATA ---
 @st.cache_data(ttl=60)
 def load_all_data(url):
     try:
@@ -121,6 +158,7 @@ try:
 
     if not df.empty:
         st.title("🐾 Refuge Médéric")
+        
         for i, row in df[df['Statut'] != "Adopté"].iterrows():
             with st.container(border=True):
                 c1, c2 = st.columns([1, 1.2])
@@ -129,12 +167,16 @@ try:
                     st.image(u if u.startswith('http') else "https://via.placeholder.com/300", use_container_width=True)
                     if row['Tranche_Age'] == "Senior":
                         st.markdown('<div class="badge-senior">✨ SOS SENIOR : Don Libre</div>', unsafe_allow_html=True)
+                
                 with c2:
                     st.subheader(row['Nom'])
-                    st.write(f"**{row['Espèce']}** | {row['Âge']} ans")
+                    st.write(f"**{row['Espèce']}** | {row['Sexe']} | {row['Âge']} ans")
+                    
                     pdf = generer_pdf(row)
                     if pdf:
-                        st.download_button(f"📄 Fiche {row['Nom']}", pdf, f"{row['Nom']}.pdf", "application/pdf", key=f"b_{i}")
+                        st.download_button(f"📄 Fiche {row['Nom']}", pdf, f"{row['Nom']}.pdf", "application/pdf", key=f"dl_{i}")
+                    
                     st.markdown(f'<a href="tel:0558736882" class="btn-contact">📞 Appeler le refuge</a>', unsafe_allow_html=True)
+
 except Exception as e:
     st.error(f"Erreur : {e}")
