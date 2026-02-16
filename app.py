@@ -237,7 +237,7 @@ try:
                 © 2026 - Application officielle du Refuge Médéric<br>
                 🌐 <a href="https://refugedax40.wordpress.com/" target="_blank">Visiter notre site internet</a><br>
                 Développé par Firnaeth. avec passion pour nos amis à quatre pattes.
-                <div class="version-note">Version Alpha_1.7 - Correctif Pop-up</div>
+                <div class="version-note">Version Alpha_3.1 - Design Aptitudes & SOS Seniors</div>
             </div>
         </div>
     """, unsafe_allow_html=True)
