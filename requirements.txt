@@ -1,4 +1,1 @@
-pandas
-streamlit
-requests
-fpdf2
+
