@@ -60,8 +60,8 @@ st.markdown(f"""
         display: inline-block; margin-bottom: 10px;
     }}
     .entente-box {{
-        background-color: #f8f9fa; padding: 10px; border-radius: 8px;
-        margin-top: 10px; border-left: 4px solid #FF0000;
+        background-color: #f8f9fa; padding: 12px; border-radius: 8px;
+        margin-top: 10px; border-left: 4px solid #FF0000; font-size: 0.95em;
     }}
     .btn-contact {{ 
         text-decoration: none !important; color: white !important; background-color: #2e7d32; 
@@ -109,7 +109,6 @@ try:
     URL_SHEET = st.secrets["gsheets"]["public_url"]
     df, df_config = load_all_data(URL_SHEET)
 
-    # Pop-up
     if not df_config.empty:
         mask = df_config.iloc[:, 0].astype(str).str.contains('Lien_Affiche', na=False, case=False)
         lignes_ev = df_config[mask]
@@ -127,8 +126,6 @@ try:
         with c1: choix_espece = st.selectbox("🐶 Espèce", ["Tous"] + sorted(df_dispo['Espèce'].dropna().unique().tolist()))
         with c2: choix_age = st.selectbox("🎂 Tranche d'âge", ["Tous", "Moins d'un an (Junior)", "1 à 5 ans (Jeune Adulte)", "5 à 10 ans (Adulte)", "10 ans et plus (Senior)"])
 
-        st.info("🛡️ **Engagement Santé :** Tous nos protégés sont **vaccinés** et **identifiés** (puce électronique).")
-        
         df_filtre = df_dispo.copy()
         if choix_espece != "Tous": df_filtre = df_filtre[df_filtre['Espèce'] == choix_espece]
         if choix_age != "Tous": df_filtre = df_filtre[df_filtre['Tranche_Age'] == choix_age]
@@ -142,29 +139,23 @@ try:
                 with col_txt:
                     st.subheader(row['Nom'])
                     
-                    # --- NOUVEAU : TAG SENIOR DONS LIBRES ---
                     if row['Tranche_Age'] == "10 ans et plus (Senior)":
                         st.markdown('<div class="senior-tag">🎁 SOS Senior : Don Libre</div>', unsafe_allow_html=True)
                     
                     st.write(f"**{row['Espèce']}** | {row['Sexe']} | **{row['Âge']} ans**")
                     
-# --- Remplace la partie "BLOC ENTENTES" dans ton code par celle-ci ---
+                    # LOGIQUE DES ICÔNES POUR LES CASES À COCHER
+                    def get_icon(val):
+                        return "✅" if str(val).upper() == "TRUE" else "❌"
 
-# On transforme les TRUE/FALSE du Sheet en icônes visuelles
-def get_status_icon(val):
-    if str(val).upper() == "TRUE":
-        return "✅"
-    return "❌"
-
-# Affichage dans la fiche
-st.markdown(f"""
-<div class="entente-box">
-    <b>🏠 Ententes :</b><br>
-    {get_status_icon(row.get('OK_Chat'))} Chats &nbsp;&nbsp;
-    {get_status_icon(row.get('OK_Chien'))} Chiens &nbsp;&nbsp;
-    {get_status_icon(row.get('OK_Enfant'))} Enfants
-</div>
-""", unsafe_allow_html=True)
+                    st.markdown(f"""
+                    <div class="entente-box">
+                        <b>🏠 Ententes :</b><br>
+                        {get_icon(row.get('OK_Chat'))} Chats &nbsp;&nbsp;
+                        {get_icon(row.get('OK_Chien'))} Chiens &nbsp;&nbsp;
+                        {get_icon(row.get('OK_Enfant'))} Enfants
+                    </div>
+                    """, unsafe_allow_html=True)
 
                     t1, t2 = st.tabs(["📖 Histoire", "📋 Caractère"])
                     with t1: st.write(row['Histoire'])
@@ -172,8 +163,7 @@ st.markdown(f"""
                     
                     st.markdown(f'<a href="tel:0558736882" class="btn-contact">📞 Appeler le refuge</a>', unsafe_allow_html=True)
 
-    # --- PIED DE PAGE ---
-    st.markdown("""<div class="footer-container"><b>Refuge Médéric - Association Animaux du Grand Dax</b><br>182 chemin Lucien Viau, 40990 St-Paul-lès-Dax</div>""", unsafe_allow_html=True)
+    st.markdown("""<div class="footer-container"><b>Refuge Médéric - Association Animaux du Grand Dax</b></div>""", unsafe_allow_html=True)
 
 except Exception as e:
     st.error(f"Erreur : {e}")
