@@ -1,24 +1,32 @@
 import streamlit as st
 import pandas as pd
+import re
 import requests
 import base64
 from fpdf import FPDF
+from io import BytesIO
 
-# --- CONFIGURATION ---
+# --- 1. CONFIGURATION ---
 URL_LOGO_HD = "https://drive.google.com/uc?export=view&id=1M8yTjY6tt5YZhPvixn-EoFIiolwXRn7E"
 
 @st.cache_data
-def get_base64_logo(url):
+def get_base64_image(url):
     try:
-        response = requests.get(url, timeout=10)
-        return base64.b64encode(response.content).decode()
-    except: return ""
+        response = requests.get(url, headers={"User-Agent": "Mozilla/5.0"}, timeout=10)
+        if response.status_code == 200:
+            return base64.b64encode(response.content).decode()
+    except: return None
+    return None
 
-logo_b64 = get_base64_logo(URL_LOGO_HD)
+logo_b64 = get_base64_image(URL_LOGO_HD)
 
-st.set_page_config(page_title="Refuge Médéric", layout="centered", page_icon="🐾")
+st.set_page_config(
+    page_title="Refuge Médéric - Association Animaux du Grand Dax", 
+    layout="centered", 
+    page_icon=f"data:image/png;base64,{logo_b64}" if logo_b64 else "🐾"
+)
 
-# --- FONCTION PDF ---
+# --- 2. FONCTION PDF ---
 def generer_pdf(row):
     try:
         pdf = FPDF()
@@ -46,13 +54,14 @@ def generer_pdf(row):
         return pdf.output(dest='S')
     except: return None
 
-# --- STYLE CSS ---
+# --- 3. STYLE VISUEL CSS ---
 st.markdown(f"""
     <style>
     .stApp {{ background-color: transparent !important; }}
     [data-testid="stVerticalBlockBorderWrapper"] {{
         background-color: white !important; border-radius: 15px !important;
-        border: 1px solid #ddd !important; padding: 20px !important; margin-bottom: 20px !important;
+        border: 1px solid #ddd !important; box-shadow: 0px 4px 12px rgba(0,0,0,0.08) !important;
+        padding: 20px !important; margin-bottom: 20px !important;
     }}
     .senior-tag {{
         background-color: #fce4ec; color: #c2185b; padding: 10px; border-radius: 8px;
@@ -70,23 +79,26 @@ st.markdown(f"""
     </style>
     """, unsafe_allow_html=True)
 
-# --- CHARGEMENT DATA ---
+# --- 4. CHARGEMENT DATA ---
 @st.cache_data(ttl=60)
-def load_data():
+def load_data(url):
     try:
-        url = st.secrets["gsheets"]["public_url"].replace('/edit?usp=sharing', '/export?format=csv')
-        df = pd.read_csv(url)
+        csv_url = url.replace('/edit?usp=sharing', '/export?format=csv')
+        df = pd.read_csv(csv_url)
         def cat_age(a):
             try:
-                return "Senior" if float(str(a).replace(',', '.')) >= 10 else "Autre"
+                a = float(str(a).replace(',', '.'))
+                return "Senior" if a >= 10 else "Autre"
             except: return "Autre"
         df['Tranche_Age'] = df['Âge'].apply(cat_age)
         return df
     except: return pd.DataFrame()
 
-# --- INTERFACE ---
+# --- 5. INTERFACE ---
 try:
-    df = load_data()
+    URL_SHEET = st.secrets["gsheets"]["public_url"]
+    df = load_data(URL_SHEET)
+
     if not df.empty:
         st.title("🐾 Refuge Médéric")
         df_dispo = df[df['Statut'] != "Adopté"]
@@ -103,18 +115,28 @@ try:
                     st.subheader(row['Nom'])
                     st.write(f"**{row['Espèce']}** | {row['Sexe']} | **{row['Âge']} ans**")
                     
-                    # Aptitudes
-                    def check(v): return "✅" if str(v).upper() == "TRUE" else "❌"
-                    st.markdown(f'''<div class="aptitude-box"><b>🏠 APTITUDES :</b><br>
-                    🐈 Chats : {check(row.get('OK_Chat'))} | 🐕 Chiens : {check(row.get('OK_Chien'))} | 🧒 Enfants : {check(row.get('OK_Enfant'))}</div>''', unsafe_allow_html=True)
+                    # Aptitudes avec émojis
+                    def check_ok(v): return "✅" if str(v).upper() == "TRUE" else "❌"
+                    apt_html = f'''<div class="aptitude-box"><b style="color:#FF0000;">🏠 APTITUDES :</b><br>
+                    🐈 Chats : {check_ok(row.get('OK_Chat'))}<br>
+                    🐕 Chiens : {check_ok(row.get('OK_Chien'))}<br>
+                    🧒 Enfants : {check_ok(row.get('OK_Enfant'))}</div>'''
+                    st.markdown(apt_html, unsafe_allow_html=True)
 
                     st.markdown(f'<a href="tel:0558736882" class="btn-contact">📞 Appeler le refuge</a>', unsafe_allow_html=True)
                     
+                    # Bouton PDF
                     pdf_bytes = generer_pdf(row)
                     if pdf_bytes:
-                        st.download_button(label="📄 Télécharger la fiche PDF", data=pdf_bytes, file_name=f"Fiche_{row['Nom']}.pdf", mime="application/pdf", use_container_width=True)
+                        st.download_button(
+                            label="📄 Télécharger la fiche PDF",
+                            data=pdf_bytes,
+                            file_name=f"Fiche_{row['Nom']}.pdf",
+                            mime="application/pdf",
+                            use_container_width=True
+                        )
 
-    st.markdown('<div style="text-align:center; color:grey; font-size: 0.8em; margin-top:50px;">Version Alpha_1.9 - SOS Senior & PDF</div>', unsafe_allow_html=True)
+    st.markdown('<div style="text-align:center; padding:20px; border-top:1px solid #ddd; color:grey;">Version Alpha_1.9 - SOS Senior & PDF</div>', unsafe_allow_html=True)
 
 except Exception as e:
-    st.error(f"Une petite erreur s'est glissée : {e}")
+    st.error(f"Erreur technique : {e}")
