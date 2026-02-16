@@ -7,7 +7,7 @@ from fpdf import FPDF
 from io import BytesIO
 from PIL import Image
 
-# --- 1. CONFIGURATION ET LOGO ---
+# --- 1. CONFIGURATION ET CHARGEMENT DU LOGO ---
 URL_LOGO_HD = "https://drive.google.com/uc?export=view&id=1M8yTjY6tt5YZhPvixn-EoFIiolwXRn7E"
 
 @st.cache_data
@@ -27,48 +27,51 @@ st.set_page_config(
     page_icon=f"data:image/png;base64,{logo_b64}" if logo_b64 else "🐾"
 )
 
-# --- 2. STYLE CSS (FILIGRANE WEB FIXE 5%) ---
-if logo_b64:
-    st.markdown(f"""
-        <style>
-        .watermark {{
-            position: fixed;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            width: 70vw;
-            opacity: 0.05;
-            z-index: -1000;
-            pointer-events: none;
-        }}
-        
-        .badge-senior {{
-            background-color: #FFF9C4 !important;
-            color: #856404 !important;
-            padding: 10px;
-            border-radius: 12px;
-            font-weight: bold;
-            text-align: center;
-            border: 2px dashed #FBC02D;
-            margin-top: 10px;
-            display: block;
-            font-size: 0.9em;
-        }}
+# --- 2. STYLE CSS (FILIGRANE WEB FIXE 5% ET BADGE SANS POINTILLÉS) ---
+# On place ce bloc ici pour qu'il soit lu en premier par le navigateur
+st.markdown(f"""
+    <style>
+    /* Filigrane de fond fixe à 5% */
+    .watermark {{
+        position: fixed;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        width: 80vw;
+        opacity: 0.05;
+        z-index: -1000;
+        pointer-events: none;
+    }}
+    
+    /* Badge Senior SANS pointillés */
+    .badge-senior {{
+        background-color: #FFF9C4 !important;
+        color: #856404 !important;
+        padding: 10px;
+        border-radius: 12px;
+        font-weight: bold;
+        text-align: center;
+        border: none !important; /* SUPPRESSION DES POINTILLÉS */
+        margin-top: 10px;
+        display: block;
+        font-size: 0.9em;
+        box-shadow: 0px 2px 4px rgba(0,0,0,0.05);
+    }}
 
-        .btn-contact {{ 
-            text-decoration: none !important; 
-            color: white !important; 
-            background-color: #2e7d32; 
-            padding: 12px; 
-            border-radius: 8px; 
-            display: block; 
-            text-align: center; 
-            font-weight: bold; 
-            margin-top: 10px; 
-        }}
-        </style>
-        <img src="data:image/png;base64,{logo_b64}" class="watermark">
-    """, unsafe_allow_html=True)
+    .btn-contact {{ 
+        text-decoration: none !important; 
+        color: white !important; 
+        background-color: #2e7d32; 
+        padding: 12px; 
+        border-radius: 8px; 
+        display: block; 
+        text-align: center; 
+        font-weight: bold; 
+        margin-top: 10px; 
+    }}
+    </style>
+    <img src="data:image/png;base64,{logo_b64 if logo_b64 else ''}" class="watermark">
+""", unsafe_allow_html=True)
 
 # --- 3. FONCTION PDF (OPACITÉ 5% DANS LE PDF) ---
 def traduire_bool(valeur):
@@ -100,12 +103,11 @@ def generer_pdf(row):
         except: pdf.ln(10)
         
         pdf.set_font("Helvetica", 'B', 14)
-        pdf.set_text_color(0, 0, 0)
         pdf.cell(0, 10, f"{row['Espèce']} | {row['Sexe']} | {row['Âge']} ans", ln=True, align='C')
         return bytes(pdf.output())
     except: return None
 
-# --- 4. DATA ---
+# --- 4. CHARGEMENT ET LOGIQUE ---
 @st.cache_data(ttl=60)
 def load_all_data(url):
     try:
@@ -150,10 +152,9 @@ try:
                     
                     pdf = generer_pdf(row)
                     if pdf:
-                        # On utilise l'index 'i' pour garantir une clé unique par bouton
-                        st.download_button(f"📄 Fiche de {row['Nom']}", pdf, f"{row['Nom']}.pdf", "application/pdf", key=f"dl_{i}")
+                        st.download_button(f"📄 Fiche de {row['Nom']}", pdf, f"{row['Nom']}.pdf", "application/pdf", key=f"btn_{i}", use_container_width=True)
                     
                     st.markdown(f'<a href="tel:0558736882" class="btn-contact">📞 Appeler le refuge</a>', unsafe_allow_html=True)
 
 except Exception as e:
-    st.error(f"Erreur d'exécution : {e}")
+    st.error(f"Erreur : {e}")
