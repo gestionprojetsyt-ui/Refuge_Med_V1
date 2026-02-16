@@ -275,7 +275,7 @@ try:
                     st.write(f"**{row['Espèce']}** | {row['Sexe']} | **{row['Âge']} ans**")
                     
                     race_display = str(row.get('Race', 'Race non précisée'))
-                    st.markdown(f'<span class="race-text">📍 Type / Race : {race_display}</span>', unsafe_allow_html=True)
+                    st.markdown(f'<span class="race-text">📋 Type / Race : {race_display}</span>', unsafe_allow_html=True)
 
                     def ck(v): return "✅" if str(v).upper() == "TRUE" else "❌"
                     def cc(v): return "#2e7d32" if str(v).upper() == "TRUE" else "#c62828"
