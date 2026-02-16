@@ -7,7 +7,7 @@ from fpdf import FPDF
 from io import BytesIO
 from PIL import Image
 
-# --- CONFIGURATION INITIALE ---
+# --- 1. CONFIGURATION ET LOGO ---
 URL_LOGO_HD = "https://drive.google.com/uc?export=view&id=1M8yTjY6tt5YZhPvixn-EoFIiolwXRn7E"
 
 @st.cache_data
@@ -22,12 +22,12 @@ def get_base64_image(url):
 logo_b64 = get_base64_image(URL_LOGO_HD)
 
 st.set_page_config(
-    page_title="Refuge Médéric", 
+    page_title="Refuge Médéric - Association Animaux du Grand Dax", 
     layout="centered", 
     page_icon=f"data:image/png;base64,{logo_b64}" if logo_b64 else "🐾"
 )
 
-# --- FONCTION PDF (FILIGRANE 5%) ---
+# --- 2. FONCTION PDF (OPACITÉ 5% DANS LE PDF) ---
 def traduire_bool(valeur):
     return "OUI" if str(valeur).upper() == "TRUE" else "NON"
 
@@ -52,7 +52,8 @@ def generer_pdf(row):
         
         try:
             u_photo = format_image_url(row['Photo'])
-            pdf.image(u_photo, x=60, y=35, w=90)
+            resp = requests.get(u_photo, timeout=5)
+            pdf.image(BytesIO(resp.content), x=60, y=35, w=90)
             pdf.ln(100)
         except: pdf.ln(10)
         
@@ -62,24 +63,27 @@ def generer_pdf(row):
         return bytes(pdf.output())
     except: return None
 
-# --- STYLE CSS FIXE ---
-# On utilise l'ID "stApp" pour être sûr que le logo reste en fond peu importe les clics
+# --- 3. STYLE CSS (FILIGRANE 5% SUR LE WEB) ---
 if logo_b64:
     st.markdown(f"""
         <style>
-        .stApp {{
+        /* Création d'un fond avec 5% d'opacité qui ne bouge pas au clic */
+        .stApp::before {{
+            content: "";
             background-image: url("data:image/png;base64,{logo_b64}");
             background-attachment: fixed;
             background-size: 60%;
             background-position: center;
             background-repeat: no-repeat;
-            opacity: 1;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            opacity: 0.05; /* OPACITÉ 5% ICI */
+            z-index: -1;
         }}
-        /* On remet le contenu en avant pour que le fond ne gêne pas la lecture */
-        .stApp > header, .stApp > .main {{
-            background-color: rgba(255, 255, 255, 0.93); 
-        }}
-        
+
         .badge-senior {{
             background-color: #FFF9C4 !important;
             color: #856404 !important;
@@ -91,14 +95,26 @@ if logo_b64:
             margin-top: 10px;
             display: block;
         }}
+
+        .btn-contact {{ 
+            text-decoration: none !important; 
+            color: white !important; 
+            background-color: #2e7d32; 
+            padding: 12px; 
+            border-radius: 8px; 
+            display: block; 
+            text-align: center; 
+            font-weight: bold; 
+            margin-top: 10px; 
+        }}
         </style>
     """, unsafe_allow_html=True)
 
-# --- CHARGEMENT DONNÉES ---
+# --- 4. DATA ET LOGIQUE ---
 @st.cache_data(ttl=60)
 def load_all_data(url):
     try:
-        csv_url = url.replace('/edit?usp=sharing', '/export?format=csv')
+        csv_url = url.replace('/edit?usp=sharing', '/export?format=csv').replace('/edit#gid=', '/export?format=csv&gid=')
         df = pd.read_csv(csv_url)
         def categoriser(age):
             try:
@@ -115,7 +131,7 @@ def format_image_url(url):
     if match: return f"https://drive.google.com/uc?export=view&id={match.group(1) or match.group(2)}"
     return url
 
-# --- INTERFACE ---
+# --- 5. INTERFACE ---
 try:
     URL_SHEET = st.secrets["gsheets"]["public_url"]
     df = load_all_data(URL_SHEET)
@@ -129,19 +145,19 @@ try:
                 c1, c2 = st.columns([1, 1.2])
                 with c1:
                     u = format_image_url(row['Photo'])
-                    st.image(u if u.startswith('http') else "https://via.placeholder.com/300")
+                    st.image(u if u.startswith('http') else "https://via.placeholder.com/300", use_container_width=True)
                     if row['Tranche_Age'] == "Senior":
                         st.markdown('<div class="badge-senior">✨ SOS SENIOR : Don Libre</div>', unsafe_allow_html=True)
                 
                 with c2:
                     st.subheader(row['Nom'])
-                    st.write(f"**{row['Espèce']}** | {row['Âge']} ans")
+                    st.write(f"**{row['Espèce']}** | {row['Sexe']} | {row['Âge']} ans")
                     
                     pdf = generer_pdf(row)
                     if pdf:
-                        st.download_button(f"📄 Fiche de {row['Nom']}", pdf, f"{row['Nom']}.pdf", "application/pdf", key=f"btn_{i}")
+                        st.download_button(f"📄 Fiche de {row['Nom']}", pdf, f"{row['Nom']}.pdf", "application/pdf", key=f"btn_{i}", use_container_width=True)
                     
-                    st.markdown(f'<a href="tel:0558736882" style="text-decoration:none; color:white; background:#2e7d32; padding:10px; border-radius:8px; display:block; text-align:center; font-weight:bold; margin-top:5px;">📞 Appeler le refuge</a>', unsafe_allow_html=True)
+                    st.markdown(f'<a href="tel:0558736882" class="btn-contact">📞 Appeler le refuge</a>', unsafe_allow_html=True)
 
 except Exception as e:
     st.error(f"Erreur : {e}")
