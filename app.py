@@ -307,7 +307,7 @@ try:
                 © 2026 - Application officielle du Refuge Médéric<br>
                 🌐 <a href="https://refugedax40.wordpress.com/" target="_blank">Visiter notre site internet</a><br>
                 Développé avec passion pour nos amis à quatre pattes.
-                <div style="font-style: italic; margin-top:5px; font-size:0.8em;">Version 3.5 - Colonnes & Race Support</div>
+                <div style="font-style: italic; margin-top:5px; font-size:0.8em;">Version Alpha_2.7 - Colonnes & Race Support</div>
             </div>
         </div>
     """, unsafe_allow_html=True)
