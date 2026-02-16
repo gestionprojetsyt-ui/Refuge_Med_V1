@@ -174,7 +174,13 @@ try:
                 with col_img:
                     u_photo = format_image_url(row['Photo'])
                     st.image(u_photo if u_photo.startswith('http') else "https://via.placeholder.com/300", use_container_width=True)
-                with col_txt:
+
+                    # --- BADGE DON LIBRE SOUS LA PHOTO ---
+                    if row['Tranche_Age'] == "10 ans et plus (Senior)":
+                        st.markdown('<div class="senior-tag">🎁 SOS Senior : Don Libre</div>', unsafe_allow_html=True)   
+                
+                
+            with col_txt:
                     st.subheader(row['Nom'])
                     statut = str(row['Statut']).strip()
                     if "Urgence" in statut: st.error(f"🚨 {statut}")
@@ -182,10 +188,6 @@ try:
                     else: st.info(f"🏠 {statut}")
 
                     st.write(f"**{row['Espèce']}** | {row['Sexe']} | **{row['Âge']} ans**")
-
-                    # --- AJOUT DU DON LIBRE POUR LES SENIORS ---
-                    if row['Tranche_Age'] == "10 ans et plus (Senior)":
-                        st.markdown('<div class="senior-tag">🎁 SOS Senior : Don Libre</div>', unsafe_allow_html=True)
 
                     # --- BLOC APTITUDES AVEC ÉMOJIS ET LISERÉ ROUGE ---
                     def check_ok(val): return "✅" if str(val).upper() == "TRUE" else "❌"
