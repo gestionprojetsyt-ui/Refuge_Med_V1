@@ -264,7 +264,7 @@ try:
                     u_photo = format_image_url(row['Photo'])
                     st.image(u_photo if u_photo.startswith('http') else "https://via.placeholder.com/300", use_container_width=True)
                     if row['Tranche_Age'] == "10 ans et plus (Senior)":
-                        st.markdown('<div class="senior-badge">✨ SOS SENIOR : Don Libre</div>', unsafe_allow_html=True)
+                        st.markdown('<div class="senior-badge">✨ SOS SENIOR</div>', unsafe_allow_html=True)
                 with col_txt:
                     st.subheader(row['Nom'])
                     statut = str(row['Statut']).strip()
