@@ -23,7 +23,7 @@ def get_base64_image(url):
 logo_b64 = get_base64_image(URL_LOGO_HD)
 
 st.set_page_config(
-    page_title="Refuge Médéric - Association Animaux du Grand Dax", 
+    page_title="L'Empreinte de Médéric", 
     layout="centered", 
     page_icon="https://raw.githubusercontent.com/Firnaeth/Refuge_Med_b1.2/main/logo_officiel-2.png"
 )
