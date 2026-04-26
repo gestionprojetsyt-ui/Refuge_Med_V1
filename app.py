@@ -305,7 +305,7 @@ try:
             </div>
             <div style="font-size:0.85em; color:#666; margin-top:15px; padding-top:15px; border-top:1px solid #ddd;">
                 © 2026 - Application officielle du Refuge Médéric<br>
-                🌐 <a href="https://9wk5pebvsdro75fsu7msqd.streamlit.app/" target="_blank">Visiter notre site internet</a><br>
+                🌐 <a href="https://2cyukcavuubunwanymjmpf.streamlit.app/" target="_blank">Visiter notre site internet</a><br>
                 Développé avec passion pour nos amis à quatre pattes.
                 <div style="font-style: italic; margin-top:5px; font-size:0.8em;">Version Alpha_2.7 - PDF & Photo Integration</div>
             </div>
